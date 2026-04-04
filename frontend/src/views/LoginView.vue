@@ -12,9 +12,8 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
-const regNickname = ref('')
-const regError = ref('')
-const regLoading = ref(false)
+const quickLoading = ref(false)
+const quickError = ref('')
 
 const showCredentials = ref(false)
 const createdNickname = ref('')
@@ -36,26 +35,17 @@ async function handleLogin() {
 }
 
 async function handleQuickRegister() {
-  regError.value = ''
-  if (!regNickname.value.trim()) {
-    regError.value = '请输入昵称'
-    return
-  }
-  regLoading.value = true
+  quickError.value = ''
+  quickLoading.value = true
   try {
-    const plainPassword = await auth.register(regNickname.value.trim())
-    createdNickname.value = regNickname.value.trim()
-    createdPassword.value = plainPassword
+    const credentials = await auth.quickRegister()
+    createdNickname.value = credentials.nickname
+    createdPassword.value = credentials.password
     showCredentials.value = true
   } catch (err: any) {
-    const data = err.response?.data
-    if (data?.errors) {
-      regError.value = Object.values(data.errors).flat().join('；')
-    } else {
-      regError.value = data?.message || '注册失败，请重试'
-    }
+    quickError.value = err.response?.data?.message || '注册失败，请重试'
   } finally {
-    regLoading.value = false
+    quickLoading.value = false
   }
 }
 
@@ -120,34 +110,32 @@ function goHome() {
           {{ loading ? '登录中...' : '登录' }}
         </button>
       </form>
+
+      <p class="mt-4 text-center text-sm text-gray-500">
+        还没有账号？
+        <RouterLink to="/register" class="text-amber-400 hover:underline">注册</RouterLink>
+      </p>
     </div>
 
     <!-- 快捷注册 -->
     <div class="rounded-2xl border border-gray-800 bg-gray-900 p-6">
       <div class="mb-4 flex items-center gap-3">
         <div class="h-px flex-1 bg-gray-800"></div>
-        <span class="text-sm text-gray-500">没有账号？快捷注册</span>
+        <span class="text-sm text-gray-500">快捷注册</span>
         <div class="h-px flex-1 bg-gray-800"></div>
       </div>
 
-      <div v-if="regError" class="mb-3 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">{{ regError }}</div>
+      <p class="mb-4 text-center text-xs text-gray-500">系统自动生成用户名和密码，点击即可完成注册</p>
 
-      <form @submit.prevent="handleQuickRegister" class="flex gap-2">
-        <input
-          v-model="regNickname"
-          type="text"
-          required
-          class="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
-          placeholder="输入昵称"
-        />
-        <button
-          type="submit"
-          :disabled="regLoading"
-          class="shrink-0 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2.5 text-sm font-bold text-black transition hover:shadow-lg hover:shadow-amber-500/25 disabled:opacity-50"
-        >
-          {{ regLoading ? '注册中...' : '一键注册' }}
-        </button>
-      </form>
+      <div v-if="quickError" class="mb-3 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">{{ quickError }}</div>
+
+      <button
+        @click="handleQuickRegister"
+        :disabled="quickLoading"
+        class="w-full rounded-lg border border-amber-500/50 bg-amber-500/10 py-3 text-sm font-bold text-amber-400 transition hover:bg-amber-500/20 disabled:opacity-50"
+      >
+        {{ quickLoading ? '生成中...' : '一键快捷注册' }}
+      </button>
     </div>
   </div>
 

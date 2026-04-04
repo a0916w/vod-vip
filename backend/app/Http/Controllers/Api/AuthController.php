@@ -15,12 +15,34 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'nickname' => 'required|string|max:50|unique:users,nickname',
+            'password' => 'required|string|min:6|confirmed',
         ]);
-
-        $password = bin2hex(random_bytes(8));
 
         $user = User::create([
             'nickname' => $data['nickname'],
+            'password' => $data['password'],
+        ]);
+
+        $token = $user->createToken('auth')->plainTextToken;
+
+        return response()->json([
+            'message' => '注册成功',
+            'user' => $user,
+            'token' => $token,
+        ], 201);
+    }
+
+    public function quickRegister(): JsonResponse
+    {
+        $nickname = 'u_' . bin2hex(random_bytes(4));
+        while (User::where('nickname', $nickname)->exists()) {
+            $nickname = 'u_' . bin2hex(random_bytes(4));
+        }
+
+        $password = bin2hex(random_bytes(6));
+
+        $user = User::create([
+            'nickname' => $nickname,
             'password' => $password,
         ]);
 
@@ -30,6 +52,7 @@ class AuthController extends Controller
             'message' => '注册成功',
             'user' => $user,
             'token' => $token,
+            'plain_nickname' => $nickname,
             'plain_password' => $password,
         ], 201);
     }

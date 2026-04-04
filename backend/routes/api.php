@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/quick-register', [AuthController::class, 'quickRegister']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/categories', [CategoryController::class, 'index']);

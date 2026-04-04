@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiLogin, apiRegister, apiLogout, apiMe, type User } from '@/api'
+import { apiLogin, apiRegister, apiQuickRegister, apiLogout, apiMe, type User } from '@/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -24,11 +24,17 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchUser()
   }
 
-  async function register(nickname: string): Promise<string> {
-    const { data } = await apiRegister({ nickname })
+  async function register(nickname: string, password: string, password_confirmation: string) {
+    const { data } = await apiRegister({ nickname, password, password_confirmation })
     setAuth(data.user, data.token)
     await fetchUser()
-    return data.plain_password
+  }
+
+  async function quickRegister(): Promise<{ nickname: string; password: string }> {
+    const { data } = await apiQuickRegister()
+    setAuth(data.user, data.token)
+    await fetchUser()
+    return { nickname: data.plain_nickname, password: data.plain_password }
   }
 
   async function fetchUser() {
@@ -66,5 +72,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('token')
   }
 
-  return { user, token, isLoggedIn, isVip, isAdmin, userLoaded, login, register, fetchUser, waitUntilReady, logout }
+  return { user, token, isLoggedIn, isVip, isAdmin, userLoaded, login, register, quickRegister, fetchUser, waitUntilReady, logout }
 })
