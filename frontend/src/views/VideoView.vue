@@ -53,11 +53,13 @@ async function loadVideo() {
     const { data } = await apiVideoDetail(Number(route.params.id))
     video.value = data
     isFavorited.value = data.is_favorited
+    loading.value = false
 
     await nextTick()
     initPlayer(data)
-  } finally {
+  } catch (e) {
     loading.value = false
+    throw e
   }
 }
 
