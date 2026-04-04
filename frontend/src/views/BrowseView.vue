@@ -118,20 +118,6 @@ onMounted(async () => {
 
     <!-- 已选分类：搜索 + 分类标签 + 视频列表 -->
     <template v-else>
-      <div class="flex items-center gap-3">
-        <button @click="backToCategories" class="shrink-0 text-sm text-gray-500 transition hover:text-white">← 返回分类</button>
-        <div class="relative flex-1">
-          <input
-            v-model="keyword"
-            @keyup.enter="search"
-            type="text"
-            placeholder="搜索视频..."
-            class="w-full rounded-full border border-gray-700 bg-gray-900 px-5 py-2.5 text-sm text-white placeholder-gray-500 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-          />
-          <button @click="search" class="absolute right-1 top-1 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-medium text-black transition hover:bg-amber-400">搜索</button>
-        </div>
-      </div>
-
       <div class="flex flex-wrap gap-2">
         <button
           @click="selectCategory(null)"
