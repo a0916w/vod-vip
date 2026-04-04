@@ -14,16 +14,13 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'nickname' => 'required|string|max:50',
+            'nickname' => 'required|string|max:50|unique:users,nickname',
         ]);
 
-        $randomId = strtolower(bin2hex(random_bytes(4)));
-        $email = "user_{$randomId}@vod.local";
         $password = bin2hex(random_bytes(8));
 
         $user = User::create([
             'nickname' => $data['nickname'],
-            'email' => $email,
             'password' => $password,
         ]);
 
@@ -44,7 +41,7 @@ class AuthController extends Controller
         ]);
 
         $account = $request->account;
-        $user = User::where('email', $account)->orWhere('nickname', $account)->first();
+        $user = User::where('nickname', $account)->orWhere('email', $account)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([

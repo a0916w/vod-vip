@@ -33,20 +33,18 @@ onMounted(() => {
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
           </RouterLink>
           <template v-if="auth.isLoggedIn">
-            <RouterLink v-if="!auth.isVip" to="/vip" class="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-1 text-xs font-bold text-black transition hover:shadow-lg hover:shadow-amber-500/20">开通 VIP</RouterLink>
-            <RouterLink v-else to="/vip" class="rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-bold text-amber-400 transition hover:bg-amber-500/25">VIP 会员</RouterLink>
             <div class="flex items-center gap-2">
               <div class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs font-bold text-black">
                 {{ auth.user?.nickname?.charAt(0) }}
               </div>
               <span class="hidden text-sm text-gray-300 md:inline">{{ auth.user?.nickname }}</span>
+              <span v-if="auth.isVip" class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400">VIP</span>
             </div>
             <button @click="auth.logout()" class="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition hover:bg-white/5 hover:text-red-400">退出</button>
           </template>
           <template v-else>
-            <RouterLink to="/vip" class="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-1 text-xs font-bold text-black transition hover:shadow-lg hover:shadow-amber-500/20">VIP</RouterLink>
             <RouterLink to="/login" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">登录</RouterLink>
-            <RouterLink to="/register" class="rounded-full border border-gray-700 px-4 py-1.5 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white">注册</RouterLink>
+            <RouterLink to="/register" class="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-1.5 text-sm font-medium text-black transition hover:shadow-lg hover:shadow-amber-500/20">注册</RouterLink>
           </template>
         </div>
       </div>

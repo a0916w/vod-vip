@@ -36,13 +36,13 @@ async function handleLogin() {
 
       <form @submit.prevent="handleLogin" class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm text-gray-400">昵称 / 邮箱</label>
+          <label class="mb-1 block text-sm text-gray-400">昵称</label>
           <input
             v-model="account"
             type="text"
             required
             class="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
-            placeholder="请输入昵称或邮箱"
+            placeholder="请输入昵称"
           />
         </div>
         <div>
