@@ -180,7 +180,14 @@ onMounted(loadHome)
           <span class="h-5 w-1 rounded-full bg-blue-500"></span>
           分类浏览
         </h2>
-        <div class="grid grid-cols-3 gap-3 md:grid-cols-5">
+        <div class="grid grid-cols-3 gap-3 md:grid-cols-6">
+          <button
+            @click="selectCategory(null)"
+            class="group rounded-xl border border-gray-800 bg-gray-900 px-4 py-5 text-center transition hover:border-amber-500/50 hover:bg-amber-500/5"
+          >
+            <div class="text-base font-medium text-white group-hover:text-amber-400">全部</div>
+            <div class="mt-1 text-xs text-gray-500">所有视频</div>
+          </button>
           <button
             v-for="cat in categories" :key="cat.id"
             @click="selectCategory(cat.id)"
