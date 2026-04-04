@@ -12,12 +12,23 @@ class TelegramBotService
 {
     private string $token;
     private string $apiBase;
+    private string $fileBase;
+    private bool $isLocalServer;
+    private int $maxFileSize;
     private array $allowedUsers;
 
     public function __construct()
     {
         $this->token = config('telegram.bot_token');
-        $this->apiBase = "https://api.telegram.org/bot{$this->token}";
+        $baseUrl = rtrim(config('telegram.api_base_url', 'https://api.telegram.org'), '/');
+        $this->isLocalServer = (bool) config('telegram.use_local_server', false);
+
+        $this->apiBase = "{$baseUrl}/bot{$this->token}";
+        $this->fileBase = "{$baseUrl}/file/bot{$this->token}";
+
+        // 标准 API: 20MB, Local Server: 2GB
+        $this->maxFileSize = $this->isLocalServer ? 2 * 1024 * 1024 * 1024 : 20 * 1024 * 1024;
+
         $this->allowedUsers = config('telegram.allowed_user_ids', []);
     }
 
@@ -45,7 +56,6 @@ class TelegramBotService
         if (isset($message['video'])) {
             $this->processMedia($message['video'], 'video', $caption, $fromId, $fromUsername, $message['chat']['id']);
         } elseif (isset($message['photo'])) {
-            // photo 是数组，取最高分辨率（最后一个）
             $photo = end($message['photo']);
             $this->processMedia($photo, 'image', $caption, $fromId, $fromUsername, $message['chat']['id']);
         } elseif (isset($message['document'])) {
@@ -73,9 +83,11 @@ class TelegramBotService
         $fileId = $fileInfo['file_id'];
         $fileSize = $fileInfo['file_size'] ?? 0;
 
-        // 20MB 限制提醒
-        if ($fileSize > 20 * 1024 * 1024) {
-            $this->sendMessage($chatId, '⚠️ 文件超过 20MB，标准 Bot API 无法下载。已记录文件 ID 供后续处理。');
+        if ($fileSize > $this->maxFileSize) {
+            $limitStr = $this->isLocalServer ? '2GB' : '20MB';
+            $modeStr = $this->isLocalServer ? 'Local Server' : '标准 Bot API';
+            $hint = $this->isLocalServer ? '' : "\n💡 搭建 Local Server 可提升到 2GB";
+            $this->sendMessage($chatId, "⚠️ 文件超过 {$limitStr}（{$modeStr} 限制）。已记录文件 ID。{$hint}");
             MediaResource::create([
                 'telegram_file_id' => $fileId,
                 'file_type' => $fileType,
@@ -100,10 +112,12 @@ class TelegramBotService
             return;
         }
 
-        $this->sendMessage($chatId, '⏳ 正在下载...');
+        $sizeHint = $fileSize > 10 * 1024 * 1024
+            ? "⏳ 正在下载（{$this->formatFileSize($fileSize)}），请稍候..."
+            : '⏳ 正在下载...';
+        $this->sendMessage($chatId, $sizeHint);
 
         try {
-            // 获取文件路径
             $response = Http::get("{$this->apiBase}/getFile", ['file_id' => $fileId]);
             $filePath = $response->json('result.file_path');
 
@@ -112,11 +126,6 @@ class TelegramBotService
                 return;
             }
 
-            // 下载文件
-            $downloadUrl = "https://api.telegram.org/file/bot{$this->token}/{$filePath}";
-            $fileContents = Http::timeout(300)->get($downloadUrl)->body();
-
-            // 生成存储路径
             $ext = pathinfo($filePath, PATHINFO_EXTENSION) ?: $this->guessExtension($fileType);
             $subDir = match ($fileType) {
                 'video' => 'telegram/videos',
@@ -126,15 +135,34 @@ class TelegramBotService
             $newName = date('Ymd_His') . '_' . Str::random(8) . '.' . $ext;
             $storagePath = "{$subDir}/{$newName}";
 
-            Storage::disk('public')->put($storagePath, $fileContents);
+            if ($this->isLocalServer && file_exists($filePath)) {
+                // Local Server 模式：文件已在本地磁盘，直接复制
+                $dest = Storage::disk('public')->path($storagePath);
+                $destDir = dirname($dest);
+                if (! is_dir($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
+                copy($filePath, $dest);
+                $actualSize = filesize($dest);
+            } else {
+                // 标准 API 或 Local Server HTTP 模式：流式下载
+                $downloadUrl = "{$this->fileBase}/{$filePath}";
+                $dest = Storage::disk('public')->path($storagePath);
+                $destDir = dirname($dest);
+                if (! is_dir($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
 
-            // 入库
+                $this->streamDownload($downloadUrl, $dest);
+                $actualSize = filesize($dest);
+            }
+
             $resource = MediaResource::create([
                 'telegram_file_id' => $fileId,
                 'file_type' => $fileType,
                 'file_name' => $fileInfo['file_name'] ?? $newName,
                 'local_path' => $storagePath,
-                'file_size' => $fileSize ?: strlen($fileContents),
+                'file_size' => $actualSize ?: $fileSize,
                 'caption' => $caption,
                 'from_user_id' => $fromId,
                 'from_username' => $fromUsername,
@@ -156,7 +184,9 @@ class TelegramBotService
             Log::info("Telegram Bot: 文件入库成功", [
                 'id' => $resource->id,
                 'type' => $fileType,
+                'size' => $sizeStr,
                 'path' => $storagePath,
+                'mode' => $this->isLocalServer ? 'local_server' : 'standard_api',
             ]);
         } catch (\Throwable $e) {
             $this->sendMessage($chatId, "❌ 下载失败：{$e->getMessage()}");
@@ -168,6 +198,34 @@ class TelegramBotService
     }
 
     /**
+     * 流式下载大文件，避免内存溢出
+     */
+    private function streamDownload(string $url, string $dest): void
+    {
+        $ch = curl_init($url);
+        $fp = fopen($dest, 'wb');
+
+        curl_setopt_array($ch, [
+            CURLOPT_FILE => $fp,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 3600,
+            CURLOPT_CONNECTTIMEOUT => 30,
+        ]);
+
+        $success = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+
+        curl_close($ch);
+        fclose($fp);
+
+        if (! $success || $httpCode !== 200) {
+            @unlink($dest);
+            throw new \RuntimeException("下载失败 (HTTP {$httpCode}): {$error}");
+        }
+    }
+
+    /**
      * 处理文本命令
      */
     private function handleTextCommand(array $message): void
@@ -175,18 +233,28 @@ class TelegramBotService
         $text = trim($message['text']);
         $chatId = $message['chat']['id'];
 
+        $modeLabel = $this->isLocalServer ? '🚀 Local Server (最大 2GB)' : '☁️ 标准 API (最大 20MB)';
+
         match (true) {
             str_starts_with($text, '/start') => $this->sendMessage($chatId,
                 "👋 欢迎使用 VOD-VIP 资源采集 Bot！\n\n"
                 . "直接向我发送或转发：\n"
                 . "🎬 视频\n🖼 图片\n📄 文件\n\n"
                 . "我会自动下载并入库。\n\n"
+                . "当前模式：{$modeLabel}\n\n"
                 . "可用命令：\n"
                 . "/stats - 查看入库统计\n"
-                . "/recent - 最近 5 条记录"
+                . "/recent - 最近 5 条记录\n"
+                . "/mode - 查看当前运行模式"
             ),
             str_starts_with($text, '/stats') => $this->handleStats($chatId),
             str_starts_with($text, '/recent') => $this->handleRecent($chatId),
+            str_starts_with($text, '/mode') => $this->sendMessage($chatId,
+                "⚙️ 运行模式\n\n"
+                . "模式：{$modeLabel}\n"
+                . "API：{$this->apiBase}\n"
+                . "文件上限：{$this->formatFileSize($this->maxFileSize)}"
+            ),
             default => $this->sendMessage($chatId, '请直接发送视频、图片或文件给我。'),
         };
     }
@@ -198,15 +266,20 @@ class TelegramBotService
         $images = MediaResource::where('file_type', 'image')->count();
         $docs = MediaResource::where('file_type', 'document')->count();
         $totalSize = MediaResource::sum('file_size');
+        $pending = MediaResource::where('local_path', 'pending_large_file')->count();
 
-        $this->sendMessage($chatId,
-            "📊 入库统计\n\n"
+        $msg = "📊 入库统计\n\n"
             . "总计：{$total} 个文件\n"
             . "🎬 视频：{$videos}\n"
             . "🖼 图片：{$images}\n"
             . "📄 文件：{$docs}\n"
-            . "💾 总大小：{$this->formatFileSize($totalSize)}"
-        );
+            . "💾 总大小：{$this->formatFileSize($totalSize)}";
+
+        if ($pending > 0) {
+            $msg .= "\n⏳ 待处理大文件：{$pending}";
+        }
+
+        $this->sendMessage($chatId, $msg);
     }
 
     private function handleRecent(int $chatId): void
@@ -219,19 +292,17 @@ class TelegramBotService
         }
 
         $lines = $items->map(fn ($item) => sprintf(
-            "#%d [%s] %s (%s)",
+            "#%d [%s] %s (%s) %s",
             $item->id,
             $item->file_type,
             $item->caption ?: $item->file_name,
             $item->created_at->format('m-d H:i'),
+            $item->local_path === 'pending_large_file' ? '⏳' : '✅',
         ));
 
         $this->sendMessage($chatId, "📋 最近入库：\n\n" . $lines->implode("\n"));
     }
 
-    /**
-     * 发送消息到指定 Chat
-     */
     public function sendMessage(int $chatId, string $text): void
     {
         Http::post("{$this->apiBase}/sendMessage", [
@@ -241,9 +312,6 @@ class TelegramBotService
         ]);
     }
 
-    /**
-     * Long Polling 获取更新
-     */
     public function getUpdates(int $offset = 0, int $timeout = 30): array
     {
         $response = Http::timeout($timeout + 5)->get("{$this->apiBase}/getUpdates", [
@@ -255,9 +323,6 @@ class TelegramBotService
         return $response->json('result', []);
     }
 
-    /**
-     * 设置 Webhook
-     */
     public function setWebhook(string $url): array
     {
         $response = Http::post("{$this->apiBase}/setWebhook", [
