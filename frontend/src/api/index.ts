@@ -94,6 +94,12 @@ export const apiVideos = (params?: Record<string, unknown>) =>
 export const apiVideoDetail = (id: number) =>
   http.get<VideoDetail>(`/videos/${id}`)
 
+export const apiLatestVideos = () =>
+  http.get<Video[]>('/videos/latest')
+
+export const apiRecommendedVideos = () =>
+  http.get<Video[]>('/videos/recommended')
+
 // Categories
 export const apiCategories = () =>
   http.get<Category[]>('/categories')

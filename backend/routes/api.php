@@ -25,6 +25,8 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/videos', [VideoController::class, 'index']);
+Route::get('/videos/latest', [VideoController::class, 'latest']);
+Route::get('/videos/recommended', [VideoController::class, 'recommended']);
 Route::get('/videos/{id}', [VideoController::class, 'show']);
 
 Route::get('/vip/plans', [VipController::class, 'plans']);

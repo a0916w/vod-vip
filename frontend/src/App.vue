@@ -11,45 +11,64 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 text-white">
+  <div class="flex min-h-screen flex-col bg-gray-950 text-white">
     <!-- 顶部导航 -->
-    <nav class="sticky top-0 z-50 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
+    <nav class="sticky top-0 z-50 border-b border-gray-800/60 bg-gray-950/80 backdrop-blur-lg">
       <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <RouterLink to="/" class="flex items-center gap-2 text-xl font-bold">
-          <span class="rounded bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-sm text-black">VOD</span>
-          <span>VIP 影院</span>
-        </RouterLink>
+        <!-- 左侧：Logo + 导航 -->
+        <div class="flex items-center gap-6">
+          <RouterLink to="/" class="flex items-center gap-2 text-lg font-bold tracking-tight">
+            <span class="rounded bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-xs font-black text-black">VOD</span>
+            VIP 影院
+          </RouterLink>
+          <div class="hidden items-center gap-1 md:flex">
+            <RouterLink to="/" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">首页</RouterLink>
+            <RouterLink v-if="auth.isLoggedIn" to="/favorites" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">我的收藏</RouterLink>
+            <RouterLink to="/vip" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">VIP 会员</RouterLink>
+          </div>
+        </div>
 
-        <div class="flex items-center gap-4">
-          <RouterLink to="/" class="text-sm text-gray-300 transition hover:text-white">首页</RouterLink>
-
+        <!-- 右侧：用户 -->
+        <div class="flex items-center gap-3">
           <template v-if="auth.isLoggedIn">
-            <RouterLink to="/favorites" class="text-sm text-gray-300 transition hover:text-white">我的收藏</RouterLink>
-            <RouterLink v-if="auth.isAdmin" to="/admin" class="text-sm text-red-400 transition hover:text-red-300">后台管理</RouterLink>
-            <RouterLink to="/vip" class="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-1.5 text-sm font-medium text-black transition hover:shadow-lg hover:shadow-amber-500/25">
-              {{ auth.isVip ? 'VIP 会员' : '开通 VIP' }}
-            </RouterLink>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-400">{{ auth.user?.nickname }}</span>
-              <button @click="auth.logout()" class="text-sm text-gray-500 transition hover:text-red-400">退出</button>
+              <div class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs font-bold text-black">
+                {{ auth.user?.nickname?.charAt(0) }}
+              </div>
+              <span class="hidden text-sm text-gray-300 md:inline">{{ auth.user?.nickname }}</span>
+              <span v-if="auth.isVip" class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400">VIP</span>
             </div>
+            <button @click="auth.logout()" class="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 transition hover:bg-white/5 hover:text-red-400">退出</button>
           </template>
           <template v-else>
-            <RouterLink to="/login" class="text-sm text-gray-300 transition hover:text-white">登录</RouterLink>
-            <RouterLink to="/register" class="rounded-full bg-white/10 px-4 py-1.5 text-sm transition hover:bg-white/20">注册</RouterLink>
+            <RouterLink to="/login" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">登录</RouterLink>
+            <RouterLink to="/register" class="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-1.5 text-sm font-medium text-black transition hover:shadow-lg hover:shadow-amber-500/20">注册</RouterLink>
           </template>
         </div>
       </div>
     </nav>
 
     <!-- 内容区 -->
-    <main class="mx-auto max-w-7xl px-4 py-6">
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
       <RouterView />
     </main>
 
-    <!-- 底部 -->
-    <footer class="border-t border-gray-800 py-8 text-center text-sm text-gray-600">
-      © 2024 VOD-VIP 影院 · All rights reserved
+    <!-- Footer -->
+    <footer class="border-t border-gray-800/60 bg-gray-950">
+      <div class="mx-auto max-w-7xl px-4 py-8">
+        <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
+          <div class="flex items-center gap-2">
+            <span class="rounded bg-gradient-to-r from-amber-400 to-orange-500 px-1.5 py-0.5 text-[10px] font-black text-black">VOD</span>
+            <span class="text-sm font-medium text-gray-400">VIP 影院</span>
+          </div>
+          <div class="flex items-center gap-6 text-xs text-gray-600">
+            <RouterLink to="/" class="transition hover:text-gray-400">首页</RouterLink>
+            <RouterLink to="/vip" class="transition hover:text-gray-400">VIP 套餐</RouterLink>
+            <RouterLink v-if="auth.isLoggedIn" to="/favorites" class="transition hover:text-gray-400">我的收藏</RouterLink>
+          </div>
+          <div class="text-xs text-gray-700">© 2024 VOD-VIP. All rights reserved.</div>
+        </div>
+      </div>
     </footer>
   </div>
 </template>

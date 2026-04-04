@@ -47,6 +47,20 @@ class VideoController extends Controller
         return response()->json($videos);
     }
 
+    public function latest(): JsonResponse
+    {
+        return response()->json(
+            Video::with('category')->orderByDesc('created_at')->take(8)->get()
+        );
+    }
+
+    public function recommended(): JsonResponse
+    {
+        return response()->json(
+            Video::with('category')->inRandomOrder()->take(8)->get()
+        );
+    }
+
     public function show(Request $request, int $id): JsonResponse
     {
         $video = Video::with('category')->findOrFail($id);
