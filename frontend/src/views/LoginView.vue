@@ -68,13 +68,6 @@ async function handleLogin() {
         还没有账号？
         <RouterLink to="/register" class="text-amber-400 hover:underline">立即注册</RouterLink>
       </p>
-
-      <!-- 测试账号提示 -->
-      <div class="mt-6 rounded-lg bg-gray-800/50 p-3 text-xs text-gray-500">
-        <p class="font-medium text-gray-400">测试账号：</p>
-        <p>VIP：admin@example.com / password</p>
-        <p>普通：user@example.com / password</p>
-      </div>
     </div>
   </div>
 </template>
