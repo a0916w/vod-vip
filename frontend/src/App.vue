@@ -60,11 +60,6 @@ onMounted(() => {
             <span class="rounded bg-gradient-to-r from-amber-400 to-orange-500 px-1.5 py-0.5 text-[10px] font-black text-black">VOD</span>
             <span class="text-sm font-medium text-gray-400">VIP 影院</span>
           </div>
-          <div class="flex items-center gap-6 text-xs text-gray-600">
-            <RouterLink to="/" class="transition hover:text-gray-400">首页</RouterLink>
-            <RouterLink to="/vip" class="transition hover:text-gray-400">VIP 套餐</RouterLink>
-            <RouterLink v-if="auth.isLoggedIn && auth.isVip" to="/favorites" class="transition hover:text-gray-400">我的收藏</RouterLink>
-          </div>
           <div class="text-xs text-gray-700">© 2024 VOD-VIP. All rights reserved.</div>
         </div>
       </div>
