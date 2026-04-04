@@ -67,12 +67,19 @@ function initPlayer(data: VideoDetail) {
   player = new Artplayer({
     container: playerRef.value,
     url: data.play_url,
+    type: 'mp4',
     poster: data.cover_url,
     autoplay: false,
     pip: true,
     fullscreen: true,
     fullscreenWeb: true,
     theme: '#f59e0b',
+    volume: 0.7,
+    muted: false,
+    playbackRate: true,
+    setting: true,
+    flip: true,
+    aspectRatio: true,
   })
 
   // 非 VIP 观看 VIP 内容：30 秒后自动暂停

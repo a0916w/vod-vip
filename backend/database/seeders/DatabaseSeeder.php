@@ -41,7 +41,16 @@ class DatabaseSeeder extends Seeder
             Category::create($cat);
         }
 
-        // 创建演示视频
+        $videoSources = [
+            'https://media.w3.org/2010/05/sintel/trailer_hd.mp4',
+            'https://media.w3.org/2010/05/bunny/trailer.mp4',
+            'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4',
+            'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',
+            'https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4',
+            'https://media.w3.org/2010/05/video/movie_300.mp4',
+        ];
+        $previewUrl = 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4';
+
         $sampleVideos = [
             ['title' => '星际穿越', 'cat' => 1, 'vip' => 1, 'desc' => '一部关于时空旅行的科幻史诗', 'duration' => 10140],
             ['title' => '盗梦空间', 'cat' => 1, 'vip' => 1, 'desc' => '在梦境中植入意念的惊险故事', 'duration' => 8880],
@@ -65,8 +74,8 @@ class DatabaseSeeder extends Seeder
             Video::create([
                 'title' => $v['title'],
                 'cover_url' => "https://picsum.photos/seed/video{$i}/400/225",
-                'video_url' => "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4",
-                'preview_url' => "https://sample-videos.com/video321/mp4/240/big_buck_bunny_240p_1mb.mp4",
+                'video_url' => $videoSources[$i % count($videoSources)],
+                'preview_url' => $previewUrl,
                 'is_vip' => $v['vip'],
                 'category_id' => $v['cat'],
                 'description' => $v['desc'],
