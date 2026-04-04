@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Video;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VideoController extends Controller
 {
@@ -52,7 +53,7 @@ class VideoController extends Controller
 
         $video->increment('view_count');
 
-        $user = $request->user();
+        $user = Auth::guard('sanctum')->user();
         $canPlayFull = ! $video->is_vip || ($user && $user->isVip());
 
         return response()->json([

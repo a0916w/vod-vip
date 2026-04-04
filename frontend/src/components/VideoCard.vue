@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Video } from '@/api'
 import { apiToggleFavorite } from '@/api'
@@ -18,6 +18,10 @@ const auth = useAuthStore()
 const router = useRouter()
 const isFav = ref(props.favorited ?? false)
 const favLoading = ref(false)
+
+watch(() => props.favorited, (val) => {
+  isFav.value = val ?? false
+})
 
 async function toggleFav(e: Event) {
   e.preventDefault()
