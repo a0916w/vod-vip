@@ -17,10 +17,10 @@ onMounted(() => {
       <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <!-- 左侧：Logo + 导航 -->
         <div class="flex items-center gap-6">
-          <RouterLink to="/" class="flex items-center gap-2 text-lg font-bold tracking-tight">
+          <a href="/" class="flex items-center gap-2 text-lg font-bold tracking-tight cursor-pointer">
             <span class="rounded bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-xs font-black text-black">VOD</span>
             VIP 影院
-          </RouterLink>
+          </a>
           <div class="hidden items-center gap-1 md:flex">
             <RouterLink to="/" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">首页</RouterLink>
             <RouterLink v-if="auth.isLoggedIn && auth.isVip" to="/favorites" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">我的收藏</RouterLink>
