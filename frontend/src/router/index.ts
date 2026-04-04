@@ -43,7 +43,6 @@ const router = createRouter({
       path: '/vip',
       name: 'vip',
       component: () => import('@/views/VipView.vue'),
-      meta: { requiresAuth: true },
     },
     {
       path: '/admin',

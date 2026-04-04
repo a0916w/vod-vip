@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { apiVipPlans, apiCreateOrder, apiMyOrders, type VipPlan, type Order } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
+const router = useRouter()
 
 const plans = ref<Record<string, VipPlan>>({})
 const orders = ref<Order[]>([])
@@ -24,6 +26,10 @@ async function loadOrders() {
 }
 
 async function handlePurchase() {
+  if (!auth.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: '/vip' } })
+    return
+  }
   loading.value = true
   try {
     const { data } = await apiCreateOrder({
@@ -54,7 +60,7 @@ function statusColor(status: number): string {
 
 onMounted(() => {
   loadPlans()
-  loadOrders()
+  if (auth.isLoggedIn) loadOrders()
 })
 </script>
 
