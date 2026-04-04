@@ -1,0 +1,102 @@
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { apiVideos, apiBatchCheckFavorites, type Video } from '@/api'
+import { useAuthStore } from '@/stores/auth'
+import VideoCard from '@/components/VideoCard.vue'
+
+const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
+
+const keyword = ref('')
+const videos = ref<Video[]>([])
+const loading = ref(false)
+const searched = ref(false)
+const currentPage = ref(1)
+const lastPage = ref(1)
+const total = ref(0)
+const favoritedIds = ref<Set<number>>(new Set())
+
+async function doSearch(page = 1) {
+  if (!keyword.value.trim()) return
+  loading.value = true
+  searched.value = true
+  try {
+    const { data } = await apiVideos({ keyword: keyword.value.trim(), page, per_page: 12 })
+    videos.value = data.data
+    currentPage.value = data.current_page
+    lastPage.value = data.last_page
+    total.value = data.total
+
+    router.replace({ query: { q: keyword.value.trim() } })
+
+    if (auth.isLoggedIn && data.data.length > 0) {
+      const ids = data.data.map((v) => v.id)
+      const { data: favData } = await apiBatchCheckFavorites(ids)
+      if (favData.favorited_ids) favData.favorited_ids.forEach((id: number) => favoritedIds.value.add(id))
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  const q = route.query.q
+  if (q) {
+    keyword.value = String(q)
+    doSearch()
+  }
+})
+</script>
+
+<template>
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">搜索</h1>
+      <RouterLink to="/" class="text-sm text-gray-500 transition hover:text-white">← 返回首页</RouterLink>
+    </div>
+
+    <!-- 搜索框 -->
+    <div class="relative">
+      <input
+        v-model="keyword"
+        @keyup.enter="doSearch(1)"
+        type="text"
+        placeholder="输入视频名称..."
+        autofocus
+        class="w-full rounded-full border border-gray-700 bg-gray-900 px-5 py-3 text-sm text-white placeholder-gray-500 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+      />
+      <button @click="doSearch(1)" class="absolute right-1.5 top-1.5 rounded-full bg-amber-500 px-5 py-1.5 text-sm font-medium text-black transition hover:bg-amber-400">搜索</button>
+    </div>
+
+    <!-- 结果 -->
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
+    </div>
+
+    <template v-else-if="searched">
+      <p class="text-sm text-gray-500">找到 <span class="text-white font-medium">{{ total }}</span> 个结果</p>
+
+      <div v-if="videos.length === 0" class="py-12 text-center text-gray-500">没有找到相关视频，换个关键词试试</div>
+      <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <VideoCard
+          v-for="v in videos" :key="v.id"
+          :video="v"
+          :favorited="favoritedIds.has(v.id)"
+          @favorite-changed="(id, fav) => fav ? favoritedIds.add(id) : favoritedIds.delete(id)"
+        />
+      </div>
+
+      <div v-if="lastPage > 1" class="flex justify-center gap-2">
+        <button
+          v-for="p in lastPage" :key="p"
+          @click="doSearch(p)"
+          :class="['h-9 w-9 rounded-lg text-sm transition', p === currentPage ? 'bg-amber-500 font-bold text-black' : 'bg-gray-800 text-gray-400 hover:bg-gray-700']"
+        >{{ p }}</button>
+      </div>
+    </template>
+
+    <div v-else class="py-16 text-center text-gray-600">输入关键词开始搜索</div>
+  </div>
+</template>

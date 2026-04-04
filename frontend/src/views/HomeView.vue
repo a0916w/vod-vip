@@ -19,7 +19,7 @@ const keyword = ref('')
 
 function search() {
   if (keyword.value.trim()) {
-    router.push({ path: '/browse', query: { q: keyword.value.trim() } })
+    router.push({ path: '/search', query: { q: keyword.value.trim() } })
   }
 }
 

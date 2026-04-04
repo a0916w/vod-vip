@@ -27,8 +27,11 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- 右侧：用户 -->
+        <!-- 右侧：搜索 + 用户 -->
         <div class="flex items-center gap-3">
+          <RouterLink to="/search" class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-white/5 hover:text-white" title="搜索">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+          </RouterLink>
           <template v-if="auth.isLoggedIn">
             <div class="flex items-center gap-2">
               <div class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs font-bold text-black">
