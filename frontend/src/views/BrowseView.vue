@@ -72,7 +72,11 @@ onMounted(async () => {
   const catQuery = route.query.cat
   const qQuery = route.query.q
 
-  if (catQuery) {
+  if (catQuery === 'all') {
+    activeCategory.value = null
+    hasSelected.value = true
+    loadVideos()
+  } else if (catQuery) {
     activeCategory.value = Number(catQuery)
     hasSelected.value = true
     loadVideos()

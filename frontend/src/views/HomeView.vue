@@ -74,7 +74,7 @@ onMounted(loadHome)
           <span class="h-5 w-1 rounded-full bg-amber-500"></span>
           最新更新
         </h2>
-        <RouterLink to="/browse" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
+        <RouterLink to="/browse?cat=all" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
       </div>
       <div v-if="latestVideos.length === 0" class="flex justify-center py-12">
         <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
@@ -91,7 +91,7 @@ onMounted(loadHome)
           <span class="h-5 w-1 rounded-full bg-rose-500"></span>
           为你推荐
         </h2>
-        <RouterLink to="/browse" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
+        <RouterLink to="/browse?cat=all" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
       </div>
       <div v-if="recommendedVideos.length === 0" class="flex justify-center py-12">
         <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
