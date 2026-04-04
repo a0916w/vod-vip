@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { apiAdminCategories, apiAdminCreateCategory, apiAdminUpdateCategory, apiAdminDeleteCategory, type Category } from '@/api'
+import { apiCategories, apiCreateCategory, apiUpdateCategory, apiDeleteCategory, type Category } from '@/api'
 
 const categories = ref<Category[]>([])
 const showModal = ref(false)
@@ -9,7 +9,7 @@ const form = ref({ name: '', slug: '', sort_order: 0 })
 const saving = ref(false)
 
 async function load() {
-  const { data } = await apiAdminCategories()
+  const { data } = await apiCategories()
   categories.value = data
 }
 
@@ -29,9 +29,9 @@ async function save() {
   saving.value = true
   try {
     if (editingId.value) {
-      await apiAdminUpdateCategory(editingId.value, { ...form.value })
+      await apiUpdateCategory(editingId.value, { ...form.value })
     } else {
-      await apiAdminCreateCategory({ ...form.value })
+      await apiCreateCategory({ ...form.value })
     }
     showModal.value = false
     load()
@@ -41,7 +41,7 @@ async function save() {
 async function remove(id: number) {
   if (!confirm('确定删除？')) return
   try {
-    await apiAdminDeleteCategory(id)
+    await apiDeleteCategory(id)
     load()
   } catch (err: any) {
     alert(err.response?.data?.message || '删除失败')

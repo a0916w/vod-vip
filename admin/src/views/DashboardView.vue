@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { apiAdminDashboard } from '@/api'
+import { apiDashboard } from '@/api'
 
 const data = ref<any>(null)
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const res = await apiAdminDashboard()
+    const res = await apiDashboard()
     data.value = res.data
   } finally {
     loading.value = false

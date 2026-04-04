@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { apiAdminOrders, type Order } from '@/api'
+import { apiOrders, type Order } from '@/api'
 
 const orders = ref<Order[]>([])
 const loading = ref(false)
@@ -10,7 +10,7 @@ const lastPage = ref(1)
 async function load(page = 1) {
   loading.value = true
   try {
-    const { data } = await apiAdminOrders({ page })
+    const { data } = await apiOrders({ page })
     orders.value = data.data
     currentPage.value = data.current_page
     lastPage.value = data.last_page

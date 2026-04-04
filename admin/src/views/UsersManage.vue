@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { apiAdminUsers, apiAdminUpdateUser, apiAdminDeleteUser, type User } from '@/api'
+import { apiUsers, apiUpdateUser, apiDeleteUser, type User } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -15,7 +15,7 @@ async function load(page = 1) {
   try {
     const params: Record<string, unknown> = { page }
     if (keyword.value) params.keyword = keyword.value
-    const { data } = await apiAdminUsers(params)
+    const { data } = await apiUsers(params)
     users.value = data.data
     currentPage.value = data.current_page
     lastPage.value = data.last_page
@@ -24,7 +24,7 @@ async function load(page = 1) {
 
 async function toggleVip(u: any) {
   const isVip = u.vip_level >= 1
-  await apiAdminUpdateUser(u.id, {
+  await apiUpdateUser(u.id, {
     vip_level: isVip ? 0 : 1,
     vip_expired_at: isVip ? null : new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 19).replace('T', ' '),
   })
@@ -32,14 +32,14 @@ async function toggleVip(u: any) {
 }
 
 async function toggleAdmin(u: any) {
-  await apiAdminUpdateUser(u.id, { is_admin: !u.is_admin })
+  await apiUpdateUser(u.id, { is_admin: !u.is_admin })
   load(currentPage.value)
 }
 
 async function remove(id: number) {
   if (!confirm('确定删除该用户？')) return
   try {
-    await apiAdminDeleteUser(id)
+    await apiDeleteUser(id)
     load(currentPage.value)
   } catch (err: any) {
     alert(err.response?.data?.message || '删除失败')
@@ -74,8 +74,8 @@ onMounted(() => load())
               </button>
             </td>
             <td class="px-4 py-3">
-              <button @click="toggleAdmin(u)" :class="(u as any).is_admin ? 'text-red-400' : 'text-gray-600'" class="hover:underline">
-                {{ (u as any).is_admin ? '管理员' : '否' }}
+              <button @click="toggleAdmin(u)" :class="u.is_admin ? 'text-red-400' : 'text-gray-600'" class="hover:underline">
+                {{ u.is_admin ? '管理员' : '否' }}
               </button>
             </td>
             <td class="px-4 py-3">

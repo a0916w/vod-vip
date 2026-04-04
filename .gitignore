@@ -17,6 +17,12 @@ frontend/dist/
 frontend/.env
 frontend/.env.local
 
+# Admin
+admin/node_modules/
+admin/dist/
+admin/.env
+admin/.env.local
+
 # IDE
 .idea/
 .vscode/

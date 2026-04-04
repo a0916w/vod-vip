@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { apiAdminMedia, apiAdminSyncMedia, apiAdminDeleteMedia, apiAdminCategories, type MediaResource, type Category } from '@/api'
+import { apiMedia, apiSyncMedia, apiDeleteMedia, apiCategories, type MediaResource, type Category } from '@/api'
 
 const items = ref<MediaResource[]>([])
 const categories = ref<Category[]>([])
@@ -15,7 +15,7 @@ const syncForm = ref({ title: '', category_id: 0, is_vip: false })
 async function load(page = 1) {
   loading.value = true
   try {
-    const { data } = await apiAdminMedia({ page })
+    const { data } = await apiMedia({ page })
     items.value = data.data
     currentPage.value = data.current_page
     lastPage.value = data.last_page
@@ -23,7 +23,7 @@ async function load(page = 1) {
 }
 
 async function loadCategories() {
-  const { data } = await apiAdminCategories()
+  const { data } = await apiCategories()
   categories.value = data
 }
 
@@ -34,14 +34,14 @@ function openSync(item: MediaResource) {
 }
 
 async function doSync() {
-  await apiAdminSyncMedia(syncId.value, { ...syncForm.value })
+  await apiSyncMedia(syncId.value, { ...syncForm.value })
   showSync.value = false
   load(currentPage.value)
 }
 
 async function remove(id: number) {
   if (!confirm('确定删除？')) return
-  await apiAdminDeleteMedia(id)
+  await apiDeleteMedia(id)
   load(currentPage.value)
 }
 

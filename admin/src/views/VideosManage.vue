@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { apiAdminVideos, apiAdminCreateVideo, apiAdminUpdateVideo, apiAdminDeleteVideo, apiAdminCategories, type Video, type Category } from '@/api'
+import { apiVideos, apiCreateVideo, apiUpdateVideo, apiDeleteVideo, apiCategories, type Video, type Category } from '@/api'
 
 const videos = ref<Video[]>([])
 const categories = ref<Category[]>([])
@@ -19,7 +19,7 @@ async function load(page = 1) {
   try {
     const params: Record<string, unknown> = { page }
     if (keyword.value) params.keyword = keyword.value
-    const { data } = await apiAdminVideos(params)
+    const { data } = await apiVideos(params)
     videos.value = data.data
     currentPage.value = data.current_page
     lastPage.value = data.last_page
@@ -27,7 +27,7 @@ async function load(page = 1) {
 }
 
 async function loadCategories() {
-  const { data } = await apiAdminCategories()
+  const { data } = await apiCategories()
   categories.value = data
 }
 
@@ -47,9 +47,9 @@ async function save() {
   saving.value = true
   try {
     if (editingId.value) {
-      await apiAdminUpdateVideo(editingId.value, { ...form.value })
+      await apiUpdateVideo(editingId.value, { ...form.value })
     } else {
-      await apiAdminCreateVideo({ ...form.value })
+      await apiCreateVideo({ ...form.value })
     }
     showModal.value = false
     load(currentPage.value)
@@ -58,7 +58,7 @@ async function save() {
 
 async function remove(id: number) {
   if (!confirm('确定删除？')) return
-  await apiAdminDeleteVideo(id)
+  await apiDeleteVideo(id)
   load(currentPage.value)
 }
 
@@ -102,7 +102,6 @@ onMounted(() => { loadCategories(); load() })
       <button v-for="p in lastPage" :key="p" @click="load(p)" :class="['h-8 w-8 rounded text-xs', p === currentPage ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-400']">{{ p }}</button>
     </div>
 
-    <!-- 弹窗 -->
     <Teleport to="body">
       <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" @click.self="showModal = false">
         <div class="w-full max-w-lg rounded-2xl bg-gray-900 p-6">
