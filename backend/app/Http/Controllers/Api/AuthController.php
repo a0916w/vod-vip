@@ -30,6 +30,7 @@ class AuthController extends Controller
             'message' => '注册成功',
             'user' => $user,
             'token' => $token,
+            'plain_password' => $password,
         ], 201);
     }
 

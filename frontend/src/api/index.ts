@@ -76,10 +76,10 @@ export interface Paginated<T> {
 }
 
 // Auth
-export const apiRegister = (data: { nickname: string; email: string; password: string; password_confirmation: string }) =>
-  http.post<{ user: User; token: string }>('/register', data)
+export const apiRegister = (data: { nickname: string }) =>
+  http.post<{ user: User; token: string; plain_password: string }>('/register', data)
 
-export const apiLogin = (data: { email: string; password: string }) =>
+export const apiLogin = (data: { account: string; password: string }) =>
   http.post<{ user: User; token: string }>('/login', data)
 
 export const apiLogout = () => http.post('/logout')
