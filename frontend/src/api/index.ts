@@ -38,6 +38,7 @@ export interface VideoDetail {
   view_count: number
   category: Category | null
   vip_required_message: string | null
+  is_favorited: boolean
   created_at: string
 }
 
@@ -106,3 +107,16 @@ export const apiCreateOrder = (data: { plan: string; payment_method: string }) =
 
 export const apiMyOrders = () =>
   http.get<Paginated<Order>>('/vip/orders')
+
+// Favorites
+export const apiToggleFavorite = (videoId: number) =>
+  http.post<{ is_favorited: boolean; message: string }>(`/favorites/${videoId}`)
+
+export const apiFavorites = (params?: Record<string, unknown>) =>
+  http.get<Paginated<Video>>('/favorites', { params })
+
+export const apiCheckFavorite = (videoId: number) =>
+  http.get<{ is_favorited: boolean }>(`/favorites/check/${videoId}`)
+
+export const apiBatchCheckFavorites = (videoIds: number[]) =>
+  http.post<{ favorited_ids: number[] }>('/favorites/batch-check', { video_ids: videoIds })

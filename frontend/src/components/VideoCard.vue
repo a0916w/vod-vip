@@ -1,7 +1,42 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Video } from '@/api'
+import { apiToggleFavorite } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 
-defineProps<{ video: Video }>()
+const props = defineProps<{
+  video: Video
+  favorited?: boolean
+}>()
+
+const emit = defineEmits<{
+  favoriteChanged: [videoId: number, isFavorited: boolean]
+}>()
+
+const auth = useAuthStore()
+const router = useRouter()
+const isFav = ref(props.favorited ?? false)
+const favLoading = ref(false)
+
+async function toggleFav(e: Event) {
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (!auth.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: `/video/${props.video.id}` } })
+    return
+  }
+
+  favLoading.value = true
+  try {
+    const { data } = await apiToggleFavorite(props.video.id)
+    isFav.value = data.is_favorited
+    emit('favoriteChanged', props.video.id, data.is_favorited)
+  } finally {
+    favLoading.value = false
+  }
+}
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -29,10 +64,19 @@ function formatViews(count: number): string {
       <!-- VIP 标签 -->
       <span
         v-if="video.is_vip"
-        class="absolute right-2 top-2 rounded bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-xs font-bold text-black shadow"
+        class="absolute left-2 top-2 rounded bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-xs font-bold text-black shadow"
       >
         VIP
       </span>
+      <!-- 收藏按钮 -->
+      <button
+        @click="toggleFav"
+        :disabled="favLoading"
+        class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-base backdrop-blur-sm transition hover:bg-black/70"
+        :title="isFav ? '取消收藏' : '收藏'"
+      >
+        {{ isFav ? '❤️' : '🤍' }}
+      </button>
       <!-- 时长 -->
       <span class="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-xs text-white">
         {{ formatDuration(video.duration) }}

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\MediaResourceController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\VideoController;
@@ -39,6 +40,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/vip/order', [VipController::class, 'createOrder']);
     Route::get('/vip/orders', [VipController::class, 'myOrders']);
+
+    // 收藏
+    Route::post('/favorites/{videoId}', [FavoriteController::class, 'toggle']);
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::get('/favorites/check/{videoId}', [FavoriteController::class, 'check']);
+    Route::post('/favorites/batch-check', [FavoriteController::class, 'batchCheck']);
 
     // 媒体资源管理
     Route::get('/media', [MediaResourceController::class, 'index']);

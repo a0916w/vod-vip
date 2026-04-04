@@ -1,17 +1,35 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Artplayer from 'artplayer'
-import { apiVideoDetail, type VideoDetail } from '@/api'
+import { apiVideoDetail, apiToggleFavorite, type VideoDetail } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import VipOverlay from '@/components/VipOverlay.vue'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 
 const video = ref<VideoDetail | null>(null)
 const loading = ref(true)
 const showVipOverlay = ref(false)
+const isFavorited = ref(false)
+const favLoading = ref(false)
+
+async function toggleFavorite() {
+  if (!video.value) return
+  if (!auth.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
+  favLoading.value = true
+  try {
+    const { data } = await apiToggleFavorite(video.value.id)
+    isFavorited.value = data.is_favorited
+  } finally {
+    favLoading.value = false
+  }
+}
 
 let player: Artplayer | null = null
 const playerRef = ref<HTMLDivElement>()
@@ -34,6 +52,7 @@ async function loadVideo() {
   try {
     const { data } = await apiVideoDetail(Number(route.params.id))
     video.value = data
+    isFavorited.value = data.is_favorited
 
     await nextTick()
     initPlayer(data)
@@ -116,13 +135,29 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <RouterLink
-            v-if="video.is_vip && !video.can_play_full"
-            to="/vip"
-            class="shrink-0 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2 text-sm font-bold text-black transition hover:shadow-lg hover:shadow-amber-500/25"
-          >
-            开通 VIP 观看完整版
-          </RouterLink>
+          <div class="flex shrink-0 items-center gap-3">
+            <button
+              @click="toggleFavorite"
+              :disabled="favLoading"
+              :class="[
+                'flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm transition',
+                isFavorited
+                  ? 'border-red-500/50 bg-red-500/10 text-red-400'
+                  : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-500 hover:text-white'
+              ]"
+            >
+              <span class="text-base">{{ isFavorited ? '❤️' : '🤍' }}</span>
+              {{ isFavorited ? '已收藏' : '收藏' }}
+            </button>
+
+            <RouterLink
+              v-if="video.is_vip && !video.can_play_full"
+              to="/vip"
+              class="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2 text-sm font-bold text-black transition hover:shadow-lg hover:shadow-amber-500/25"
+            >
+              开通 VIP 观看完整版
+            </RouterLink>
+          </div>
         </div>
 
         <p v-if="video.description" class="text-sm leading-relaxed text-gray-400">{{ video.description }}</p>

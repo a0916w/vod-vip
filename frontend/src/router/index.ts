@@ -24,6 +24,12 @@ const router = createRouter({
       component: () => import('@/views/RegisterView.vue'),
     },
     {
+      path: '/favorites',
+      name: 'favorites',
+      component: () => import('@/views/FavoritesView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/vip',
       name: 'vip',
       component: () => import('@/views/VipView.vue'),

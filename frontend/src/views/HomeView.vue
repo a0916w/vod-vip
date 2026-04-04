@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { apiVideos, apiCategories, type Video, type Category } from '@/api'
+import { apiVideos, apiCategories, apiBatchCheckFavorites, type Video, type Category } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import VideoCard from '@/components/VideoCard.vue'
+
+const auth = useAuthStore()
 
 const videos = ref<Video[]>([])
 const categories = ref<Category[]>([])
@@ -10,6 +13,7 @@ const keyword = ref('')
 const loading = ref(false)
 const currentPage = ref(1)
 const lastPage = ref(1)
+const favoritedIds = ref<Set<number>>(new Set())
 
 async function loadVideos(page = 1) {
   loading.value = true
@@ -22,6 +26,12 @@ async function loadVideos(page = 1) {
     videos.value = data.data
     currentPage.value = data.current_page
     lastPage.value = data.last_page
+
+    if (auth.isLoggedIn && data.data.length > 0) {
+      const ids = data.data.map((v) => v.id)
+      const { data: favData } = await apiBatchCheckFavorites(ids)
+      favoritedIds.value = new Set(favData.favorited_ids)
+    }
   } finally {
     loading.value = false
   }
@@ -107,7 +117,13 @@ onMounted(() => {
     </div>
 
     <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-      <VideoCard v-for="video in videos" :key="video.id" :video="video" />
+      <VideoCard
+        v-for="video in videos"
+        :key="video.id"
+        :video="video"
+        :favorited="favoritedIds.has(video.id)"
+        @favorite-changed="(id, fav) => fav ? favoritedIds.add(id) : favoritedIds.delete(id)"
+      />
     </div>
 
     <!-- 分页 -->

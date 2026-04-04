@@ -53,6 +53,7 @@ class VideoController extends Controller
             'view_count' => $video->view_count,
             'category' => $video->category,
             'vip_required_message' => $canPlayFull ? null : '开通 VIP 观看完整版',
+            'is_favorited' => $user ? $user->hasFavorited($video->id) : false,
             'created_at' => $video->created_at,
         ]);
     }
