@@ -73,6 +73,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'is_vip' => $user->isVip(),
+            'is_admin' => $user->is_admin,
             'vip_expired_at' => $user->vip_expired_at?->toDateTimeString(),
         ]);
     }

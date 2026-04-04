@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'check.vip' => \App\Http\Middleware\CheckVip::class,
+            'admin' => \App\Http\Middleware\AdminOnly::class,
         ]);
 
         $middleware->statefulApi();

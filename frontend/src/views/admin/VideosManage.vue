@@ -1,0 +1,134 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { apiAdminVideos, apiAdminCreateVideo, apiAdminUpdateVideo, apiAdminDeleteVideo, apiAdminCategories, type Video, type Category } from '@/api'
+
+const videos = ref<Video[]>([])
+const categories = ref<Category[]>([])
+const loading = ref(false)
+const currentPage = ref(1)
+const lastPage = ref(1)
+const keyword = ref('')
+
+const showModal = ref(false)
+const editingId = ref<number | null>(null)
+const form = ref({ title: '', cover_url: '', video_url: '', preview_url: '', is_vip: false, category_id: 0, description: '', duration: 0 })
+const saving = ref(false)
+
+async function load(page = 1) {
+  loading.value = true
+  try {
+    const params: Record<string, unknown> = { page }
+    if (keyword.value) params.keyword = keyword.value
+    const { data } = await apiAdminVideos(params)
+    videos.value = data.data
+    currentPage.value = data.current_page
+    lastPage.value = data.last_page
+  } finally { loading.value = false }
+}
+
+async function loadCategories() {
+  const { data } = await apiAdminCategories()
+  categories.value = data
+}
+
+function openCreate() {
+  editingId.value = null
+  form.value = { title: '', cover_url: '', video_url: '', preview_url: '', is_vip: false, category_id: categories.value[0]?.id ?? 0, description: '', duration: 0 }
+  showModal.value = true
+}
+
+function openEdit(v: Video) {
+  editingId.value = v.id
+  form.value = { title: v.title, cover_url: v.cover_url, video_url: v.video_url ?? '', preview_url: v.preview_url ?? '', is_vip: v.is_vip, category_id: v.category_id, description: v.description ?? '', duration: v.duration }
+  showModal.value = true
+}
+
+async function save() {
+  saving.value = true
+  try {
+    if (editingId.value) {
+      await apiAdminUpdateVideo(editingId.value, { ...form.value })
+    } else {
+      await apiAdminCreateVideo({ ...form.value })
+    }
+    showModal.value = false
+    load(currentPage.value)
+  } finally { saving.value = false }
+}
+
+async function remove(id: number) {
+  if (!confirm('确定删除？')) return
+  await apiAdminDeleteVideo(id)
+  load(currentPage.value)
+}
+
+onMounted(() => { loadCategories(); load() })
+</script>
+
+<template>
+  <div>
+    <div class="mb-4 flex items-center justify-between">
+      <h1 class="text-2xl font-bold">视频管理</h1>
+      <button @click="openCreate" class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black hover:bg-amber-400">+ 新增视频</button>
+    </div>
+
+    <div class="mb-4 flex gap-2">
+      <input v-model="keyword" @keyup.enter="load(1)" placeholder="搜索标题..." class="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white outline-none focus:border-amber-500" />
+      <button @click="load(1)" class="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">搜索</button>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-gray-800">
+      <table class="w-full text-sm">
+        <thead><tr class="border-b border-gray-800 bg-gray-900/50 text-left text-gray-400">
+          <th class="px-4 py-3">ID</th><th class="px-4 py-3">标题</th><th class="px-4 py-3">分类</th><th class="px-4 py-3">VIP</th><th class="px-4 py-3">播放</th><th class="px-4 py-3">操作</th>
+        </tr></thead>
+        <tbody>
+          <tr v-for="v in videos" :key="v.id" class="border-b border-gray-800/50 hover:bg-gray-900/30">
+            <td class="px-4 py-3 text-gray-500">{{ v.id }}</td>
+            <td class="px-4 py-3">{{ v.title }}</td>
+            <td class="px-4 py-3 text-gray-400">{{ v.category?.name }}</td>
+            <td class="px-4 py-3"><span :class="v.is_vip ? 'text-amber-400' : 'text-gray-600'">{{ v.is_vip ? 'VIP' : '免费' }}</span></td>
+            <td class="px-4 py-3 text-gray-500">{{ v.view_count }}</td>
+            <td class="px-4 py-3 space-x-2">
+              <button @click="openEdit(v)" class="text-blue-400 hover:underline">编辑</button>
+              <button @click="remove(v.id)" class="text-red-400 hover:underline">删除</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div v-if="lastPage > 1" class="mt-4 flex gap-1">
+      <button v-for="p in lastPage" :key="p" @click="load(p)" :class="['h-8 w-8 rounded text-xs', p === currentPage ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-400']">{{ p }}</button>
+    </div>
+
+    <!-- 弹窗 -->
+    <Teleport to="body">
+      <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" @click.self="showModal = false">
+        <div class="w-full max-w-lg rounded-2xl bg-gray-900 p-6">
+          <h3 class="mb-4 text-lg font-bold">{{ editingId ? '编辑视频' : '新增视频' }}</h3>
+          <form @submit.prevent="save" class="space-y-3">
+            <input v-model="form.title" placeholder="标题" required class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
+            <input v-model="form.video_url" placeholder="视频链接" required class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
+            <input v-model="form.cover_url" placeholder="封面链接" required class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
+            <input v-model="form.preview_url" placeholder="试看链接（可选）" class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
+            <div class="flex gap-3">
+              <select v-model="form.category_id" class="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none">
+                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </select>
+              <label class="flex items-center gap-2 text-sm text-gray-300">
+                <input type="checkbox" v-model="form.is_vip" class="accent-amber-500" /> VIP 专属
+              </label>
+            </div>
+            <input v-model.number="form.duration" type="number" placeholder="时长(秒)" class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
+            <textarea v-model="form.description" placeholder="简介" rows="2" class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500"></textarea>
+            <div class="flex justify-end gap-2">
+              <button type="button" @click="showModal = false" class="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-400">取消</button>
+              <button type="submit" :disabled="saving" class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black disabled:opacity-50">{{ saving ? '保存中...' : '保存' }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+  </div>
+</template>

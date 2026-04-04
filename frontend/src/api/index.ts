@@ -120,3 +120,38 @@ export const apiCheckFavorite = (videoId: number) =>
 
 export const apiBatchCheckFavorites = (videoIds: number[]) =>
   http.post<{ favorited_ids: number[] }>('/favorites/batch-check', { video_ids: videoIds })
+
+// Admin
+export const apiAdminDashboard = () => http.get('/admin/dashboard')
+
+export const apiAdminVideos = (params?: Record<string, unknown>) => http.get<Paginated<Video>>('/admin/videos', { params })
+export const apiAdminCreateVideo = (data: Record<string, unknown>) => http.post('/admin/videos', data)
+export const apiAdminUpdateVideo = (id: number, data: Record<string, unknown>) => http.put(`/admin/videos/${id}`, data)
+export const apiAdminDeleteVideo = (id: number) => http.delete(`/admin/videos/${id}`)
+
+export const apiAdminCategories = () => http.get<Category[]>('/admin/categories')
+export const apiAdminCreateCategory = (data: Record<string, unknown>) => http.post('/admin/categories', data)
+export const apiAdminUpdateCategory = (id: number, data: Record<string, unknown>) => http.put(`/admin/categories/${id}`, data)
+export const apiAdminDeleteCategory = (id: number) => http.delete(`/admin/categories/${id}`)
+
+export const apiAdminUsers = (params?: Record<string, unknown>) => http.get<Paginated<User>>('/admin/users', { params })
+export const apiAdminUpdateUser = (id: number, data: Record<string, unknown>) => http.put(`/admin/users/${id}`, data)
+export const apiAdminDeleteUser = (id: number) => http.delete(`/admin/users/${id}`)
+
+export const apiAdminOrders = (params?: Record<string, unknown>) => http.get<Paginated<Order>>('/admin/orders', { params })
+
+export interface MediaResource {
+  id: number
+  telegram_file_id: string
+  file_type: string
+  file_name: string | null
+  local_path: string
+  file_size: number
+  caption: string | null
+  from_username: string | null
+  synced_to_video: boolean
+  created_at: string
+}
+export const apiAdminMedia = (params?: Record<string, unknown>) => http.get<Paginated<MediaResource>>('/admin/media', { params })
+export const apiAdminSyncMedia = (id: number, data: Record<string, unknown>) => http.post(`/admin/media/${id}/sync`, data)
+export const apiAdminDeleteMedia = (id: number) => http.delete(`/admin/media/${id}`)

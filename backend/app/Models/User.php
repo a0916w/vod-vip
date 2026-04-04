@@ -23,6 +23,7 @@ class User extends Authenticatable
         'avatar',
         'vip_level',
         'vip_expired_at',
+        'is_admin',
     ];
 
     protected $hidden = [
@@ -36,6 +37,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'vip_expired_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 

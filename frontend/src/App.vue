@@ -25,6 +25,7 @@ onMounted(() => {
 
           <template v-if="auth.isLoggedIn">
             <RouterLink to="/favorites" class="text-sm text-gray-300 transition hover:text-white">我的收藏</RouterLink>
+            <RouterLink v-if="auth.isAdmin" to="/admin" class="text-sm text-red-400 transition hover:text-red-300">后台管理</RouterLink>
             <RouterLink to="/vip" class="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-1.5 text-sm font-medium text-black transition hover:shadow-lg hover:shadow-amber-500/25">
               {{ auth.isVip ? 'VIP 会员' : '开通 VIP' }}
             </RouterLink>

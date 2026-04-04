@@ -35,6 +35,19 @@ const router = createRouter({
       component: () => import('@/views/VipView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/admin',
+      component: () => import('@/views/admin/AdminLayout.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        { path: '', name: 'admin-dashboard', component: () => import('@/views/admin/DashboardView.vue') },
+        { path: 'videos', name: 'admin-videos', component: () => import('@/views/admin/VideosManage.vue') },
+        { path: 'categories', name: 'admin-categories', component: () => import('@/views/admin/CategoriesManage.vue') },
+        { path: 'users', name: 'admin-users', component: () => import('@/views/admin/UsersManage.vue') },
+        { path: 'orders', name: 'admin-orders', component: () => import('@/views/admin/OrdersManage.vue') },
+        { path: 'media', name: 'admin-media', component: () => import('@/views/admin/MediaManage.vue') },
+      ],
+    },
   ],
 })
 
