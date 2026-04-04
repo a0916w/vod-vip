@@ -23,7 +23,7 @@ onMounted(() => {
           </RouterLink>
           <div class="hidden items-center gap-1 md:flex">
             <RouterLink to="/" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">首页</RouterLink>
-            <RouterLink v-if="auth.isLoggedIn" to="/favorites" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">我的收藏</RouterLink>
+            <RouterLink v-if="auth.isLoggedIn && auth.isVip" to="/favorites" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">我的收藏</RouterLink>
             <RouterLink to="/vip" class="rounded-lg px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">VIP 会员</RouterLink>
           </div>
         </div>
@@ -64,7 +64,7 @@ onMounted(() => {
           <div class="flex items-center gap-6 text-xs text-gray-600">
             <RouterLink to="/" class="transition hover:text-gray-400">首页</RouterLink>
             <RouterLink to="/vip" class="transition hover:text-gray-400">VIP 套餐</RouterLink>
-            <RouterLink v-if="auth.isLoggedIn" to="/favorites" class="transition hover:text-gray-400">我的收藏</RouterLink>
+            <RouterLink v-if="auth.isLoggedIn && auth.isVip" to="/favorites" class="transition hover:text-gray-400">我的收藏</RouterLink>
           </div>
           <div class="text-xs text-gray-700">© 2024 VOD-VIP. All rights reserved.</div>
         </div>

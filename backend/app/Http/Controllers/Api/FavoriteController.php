@@ -15,6 +15,10 @@ class FavoriteController extends Controller
     {
         $user = $request->user();
 
+        if (! $user->isVip()) {
+            return response()->json(['message' => '收藏功能仅限 VIP 会员使用'], 403);
+        }
+
         if ($user->hasFavorited($videoId)) {
             $user->favorites()->detach($videoId);
             return response()->json([

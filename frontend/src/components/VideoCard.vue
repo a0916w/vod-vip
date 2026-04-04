@@ -31,12 +31,18 @@ async function toggleFav(e: Event) {
     router.push({ name: 'login', query: { redirect: `/video/${props.video.id}` } })
     return
   }
+  if (!auth.isVip) {
+    router.push('/vip')
+    return
+  }
 
   favLoading.value = true
   try {
     const { data } = await apiToggleFavorite(props.video.id)
     isFav.value = data.is_favorited
     emit('favoriteChanged', props.video.id, data.is_favorited)
+  } catch (err: any) {
+    if (err.response?.status === 403) router.push('/vip')
   } finally {
     favLoading.value = false
   }

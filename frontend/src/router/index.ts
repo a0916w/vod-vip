@@ -27,7 +27,7 @@ const router = createRouter({
       path: '/favorites',
       name: 'favorites',
       component: () => import('@/views/FavoritesView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiresVip: true },
     },
     {
       path: '/vip',
@@ -56,11 +56,12 @@ router.beforeEach(async (to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
-  if (to.meta.requiresAdmin) {
+  if (to.meta.requiresVip || to.meta.requiresAdmin) {
     const { useAuthStore } = await import('@/stores/auth')
     const auth = useAuthStore()
     await auth.waitUntilReady()
-    if (!auth.isAdmin) return { path: '/' }
+    if (to.meta.requiresVip && !auth.isVip) return { path: '/vip' }
+    if (to.meta.requiresAdmin && !auth.isAdmin) return { path: '/' }
   }
 })
 
