@@ -15,14 +15,16 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'nickname' => 'required|string|max:50',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
         ]);
+
+        $randomId = strtolower(bin2hex(random_bytes(4)));
+        $email = "user_{$randomId}@vod.local";
+        $password = bin2hex(random_bytes(8));
 
         $user = User::create([
             'nickname' => $data['nickname'],
-            'email' => $data['email'],
-            'password' => $data['password'],
+            'email' => $email,
+            'password' => $password,
         ]);
 
         $token = $user->createToken('auth')->plainTextToken;
@@ -37,15 +39,16 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|email',
+            'account' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $account = $request->account;
+        $user = User::where('email', $account)->orWhere('nickname', $account)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['账号或密码不正确'],
+                'account' => ['账号或密码不正确'],
             ]);
         }
 

@@ -7,7 +7,7 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 
-const email = ref('')
+const account = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -16,7 +16,7 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    await auth.login(email.value, password.value)
+    await auth.login(account.value, password.value)
     const redirect = (route.query.redirect as string) || '/'
     router.push(redirect)
   } catch (err: any) {
@@ -36,13 +36,13 @@ async function handleLogin() {
 
       <form @submit.prevent="handleLogin" class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm text-gray-400">邮箱</label>
+          <label class="mb-1 block text-sm text-gray-400">昵称 / 邮箱</label>
           <input
-            v-model="email"
-            type="email"
+            v-model="account"
+            type="text"
             required
             class="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
-            placeholder="请输入邮箱"
+            placeholder="请输入昵称或邮箱"
           />
         </div>
         <div>
@@ -66,7 +66,7 @@ async function handleLogin() {
 
       <p class="mt-4 text-center text-sm text-gray-500">
         还没有账号？
-        <RouterLink to="/register" class="text-amber-400 hover:underline">立即注册</RouterLink>
+        <RouterLink to="/register" class="text-amber-400 hover:underline">一键注册</RouterLink>
       </p>
     </div>
   </div>
