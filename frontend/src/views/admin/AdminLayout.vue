@@ -1,15 +1,4 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
-import { onMounted } from 'vue'
-
-const auth = useAuthStore()
-const router = useRouter()
-
-onMounted(() => {
-  if (!auth.isAdmin) router.replace('/')
-})
-
 const navItems = [
   { to: '/admin', label: '仪表盘', icon: '📊' },
   { to: '/admin/videos', label: '视频管理', icon: '🎬' },

@@ -7,6 +7,8 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
   const isVip = ref(false)
   const isAdmin = ref(false)
+  const userLoaded = ref(false)
+  let fetchPromise: Promise<void> | null = null
 
   const isLoggedIn = computed(() => !!token.value)
 
@@ -29,15 +31,27 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUser() {
-    if (!token.value) return
-    try {
-      const { data } = await apiMe()
-      user.value = data.user
-      isVip.value = data.is_vip
-      isAdmin.value = data.is_admin ?? false
-    } catch {
-      logout()
-    }
+    if (!token.value) { userLoaded.value = true; return }
+    if (fetchPromise) return fetchPromise
+    fetchPromise = (async () => {
+      try {
+        const { data } = await apiMe()
+        user.value = data.user
+        isVip.value = data.is_vip
+        isAdmin.value = data.is_admin ?? false
+      } catch {
+        logout()
+      } finally {
+        userLoaded.value = true
+        fetchPromise = null
+      }
+    })()
+    return fetchPromise
+  }
+
+  async function waitUntilReady() {
+    if (userLoaded.value) return
+    await fetchUser()
   }
 
   function logout() {
@@ -51,5 +65,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('token')
   }
 
-  return { user, token, isLoggedIn, isVip, isAdmin, login, register, fetchUser, logout }
+  return { user, token, isLoggedIn, isVip, isAdmin, userLoaded, login, register, fetchUser, waitUntilReady, logout }
 })

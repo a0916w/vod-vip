@@ -51,9 +51,16 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !localStorage.getItem('token')) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.requiresAdmin) {
+    const { useAuthStore } = await import('@/stores/auth')
+    const auth = useAuthStore()
+    await auth.waitUntilReady()
+    if (!auth.isAdmin) return { path: '/' }
   }
 })
 

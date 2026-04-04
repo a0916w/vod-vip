@@ -9,6 +9,21 @@ use Illuminate\Http\Request;
 
 class VideoController extends Controller
 {
+    private function normalizeUrl(?string $url, Request $request): ?string
+    {
+        if (! $url) return null;
+
+        if (str_starts_with($url, '/storage/')) {
+            $url = $request->schemeAndHttpHost() . $url;
+        }
+
+        if ($request->secure() && str_starts_with($url, 'http://')) {
+            return 'https://' . substr($url, 7);
+        }
+
+        return $url;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = Video::with('category');
@@ -46,8 +61,8 @@ class VideoController extends Controller
             'cover_url' => $video->cover_url,
             'is_vip' => $video->is_vip,
             'can_play_full' => $canPlayFull,
-            'play_url' => $canPlayFull ? $video->video_url : $video->preview_url,
-            'preview_url' => $video->preview_url,
+            'play_url' => $this->normalizeUrl($canPlayFull ? $video->video_url : $video->preview_url, $request),
+            'preview_url' => $this->normalizeUrl($video->preview_url, $request),
             'description' => $video->description,
             'duration' => $video->duration,
             'view_count' => $video->view_count,

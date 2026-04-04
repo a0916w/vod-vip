@@ -50,7 +50,7 @@ class MediaManageController extends Controller
         $video = Video::create([
             'title' => $data['title'] ?? $resource->caption ?? $resource->file_name,
             'cover_url' => "https://picsum.photos/seed/m{$resource->id}/400/225",
-            'video_url' => asset('storage/' . $resource->local_path),
+            'video_url' => '/storage/' . $resource->local_path,
             'is_vip' => $data['is_vip'] ?? 0,
             'category_id' => $data['category_id'],
             'description' => $resource->caption,
