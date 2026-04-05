@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\TranscodeVideoJob;
 use App\Models\MediaResource;
 use App\Models\Video;
 use Illuminate\Http\JsonResponse;
@@ -39,9 +40,6 @@ class MediaResourceController extends Controller
         ]);
     }
 
-    /**
-     * 将采集的媒体同步到 videos 表
-     */
     public function syncToVideo(Request $request, int $id): JsonResponse
     {
         $resource = MediaResource::findOrFail($id);
@@ -63,21 +61,22 @@ class MediaResourceController extends Controller
 
         $video = Video::create([
             'title' => $data['title'] ?? $resource->caption ?? $resource->file_name,
-            'cover_url' => $resource->file_type === 'video'
-                ? 'https://picsum.photos/seed/' . $resource->id . '/400/225'
-                : asset('storage/' . $resource->local_path),
-            'video_url' => asset('storage/' . $resource->local_path),
+            'cover_url' => 'https://picsum.photos/seed/' . $resource->id . '/400/225',
+            'video_url' => $resource->local_path,
             'preview_url' => null,
             'is_vip' => $data['is_vip'] ?? 0,
             'category_id' => $data['category_id'],
             'description' => $data['description'] ?? $resource->caption,
             'duration' => $resource->duration ?? 0,
+            'transcode_status' => 'pending',
         ]);
 
         $resource->update(['synced_to_video' => true]);
 
+        TranscodeVideoJob::dispatch($video->id);
+
         return response()->json([
-            'message' => '同步成功',
+            'message' => '同步成功，转码已排队',
             'video' => $video,
         ], 201);
     }

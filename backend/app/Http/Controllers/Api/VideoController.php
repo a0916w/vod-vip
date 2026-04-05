@@ -10,19 +10,25 @@ use Illuminate\Support\Facades\Auth;
 
 class VideoController extends Controller
 {
-    private function normalizeUrl(?string $url, Request $request): ?string
+    private function mediaUrl(?string $relativePath): ?string
     {
-        if (! $url) return null;
-
-        if (str_starts_with($url, '/storage/')) {
-            $url = $request->schemeAndHttpHost() . $url;
+        if (! $relativePath) {
+            return null;
         }
 
-        if ($request->secure() && str_starts_with($url, 'http://')) {
-            return 'https://' . substr($url, 7);
+        if (str_starts_with($relativePath, 'http://') || str_starts_with($relativePath, 'https://')) {
+            return $relativePath;
         }
 
-        return $url;
+        return rtrim(config('app.media_base_url'), '/') . '/' . ltrim($relativePath, '/');
+    }
+
+    private function videoListItem(Video $video): array
+    {
+        return [
+            ...$video->toArray(),
+            'cover_url' => $this->mediaUrl($video->cover_url) ?? $video->cover_url,
+        ];
     }
 
     public function index(Request $request): JsonResponse
@@ -41,24 +47,26 @@ class VideoController extends Controller
             $query->where('title', 'like', "%{$keyword}%");
         }
 
-        $videos = $query->orderByDesc('created_at')
+        $paginator = $query->orderByDesc('created_at')
             ->paginate($request->query('per_page', 12));
 
-        return response()->json($videos);
+        $paginator->getCollection()->transform(fn (Video $v) => $this->videoListItem($v));
+
+        return response()->json($paginator);
     }
 
     public function latest(): JsonResponse
     {
-        return response()->json(
-            Video::with('category')->orderByDesc('created_at')->take(8)->get()
-        );
+        $videos = Video::with('category')->orderByDesc('created_at')->take(8)->get();
+
+        return response()->json($videos->map(fn (Video $v) => $this->videoListItem($v))->values());
     }
 
     public function recommended(): JsonResponse
     {
-        return response()->json(
-            Video::with('category')->inRandomOrder()->take(8)->get()
-        );
+        $videos = Video::with('category')->inRandomOrder()->take(8)->get();
+
+        return response()->json($videos->map(fn (Video $v) => $this->videoListItem($v))->values());
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -70,14 +78,30 @@ class VideoController extends Controller
         $user = Auth::guard('sanctum')->user();
         $canPlayFull = ! $video->is_vip || ($user && $user->isVip());
 
+        $isHls = $video->hls_path && $video->transcode_status === 'done';
+        $playType = $isHls ? 'hls' : 'mp4';
+
+        if ($canPlayFull) {
+            $playUrl = $isHls
+                ? $this->mediaUrl($video->hls_path)
+                : $this->mediaUrl($video->video_url);
+        } else {
+            $playUrl = $this->mediaUrl($video->preview_url);
+        }
+
+        $keyUrl = ($isHls && $canPlayFull) ? HlsController::signedKeyUrl($video->id) : null;
+
         return response()->json([
             'id' => $video->id,
             'title' => $video->title,
-            'cover_url' => $video->cover_url,
+            'cover_url' => $this->mediaUrl($video->cover_url) ?? $video->cover_url,
             'is_vip' => $video->is_vip,
             'can_play_full' => $canPlayFull,
-            'play_url' => $this->normalizeUrl($canPlayFull ? $video->video_url : $video->preview_url, $request),
-            'preview_url' => $this->normalizeUrl($video->preview_url, $request),
+            'play_url' => $playUrl,
+            'play_type' => $playType,
+            'key_url' => $keyUrl,
+            'transcode_status' => $video->transcode_status,
+            'preview_url' => $this->mediaUrl($video->preview_url),
             'description' => $video->description,
             'duration' => $video->duration,
             'view_count' => $video->view_count,

@@ -125,4 +125,8 @@ return [
 
     'api_encrypt_key' => env('API_ENCRYPT_KEY', ''),
 
+    'media_base_url' => env('MEDIA_BASE_URL', 'http://localhost:8000/storage'),
+
+    'hls_key_secret' => env('HLS_KEY_SECRET', ''),
+
 ];

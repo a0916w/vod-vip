@@ -15,6 +15,9 @@ class Video extends Model
         'title',
         'cover_url',
         'video_url',
+        'hls_path',
+        'hls_key',
+        'transcode_status',
         'preview_url',
         'is_vip',
         'category_id',
@@ -22,6 +25,8 @@ class Video extends Model
         'duration',
         'view_count',
     ];
+
+    protected $hidden = ['hls_key'];
 
     protected function casts(): array
     {

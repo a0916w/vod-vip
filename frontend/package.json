@@ -15,6 +15,7 @@
     "artplayer": "^5.4.0",
     "axios": "^1.14.0",
     "express": "^5.1.0",
+    "hls.js": "^1.6.15",
     "http-proxy-middleware": "^3.0.5",
     "pinia": "^3.0.4",
     "sirv": "^3.0.1",

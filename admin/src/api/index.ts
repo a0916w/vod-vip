@@ -35,6 +35,8 @@ export interface Video {
   cover_url: string
   video_url: string | null
   preview_url: string | null
+  hls_path: string | null
+  transcode_status: string | null
   is_vip: boolean
   category_id: number
   category?: Category
@@ -42,6 +44,12 @@ export interface Video {
   duration: number
   view_count: number
   created_at: string
+}
+
+export interface VideoPlayInfo {
+  play_url: string | null
+  play_type: 'hls' | 'mp4'
+  key_url: string | null
 }
 
 export interface Category {
@@ -96,8 +104,10 @@ export const apiDashboard = () => http.get('/admin/dashboard')
 
 // Videos
 export const apiVideos = (params?: Record<string, unknown>) => http.get<Paginated<Video>>('/admin/videos', { params })
+export const apiVideoDetail = (id: number) => http.get<Video & VideoPlayInfo>(`/admin/videos/${id}`)
 export const apiCreateVideo = (data: Record<string, unknown>) => http.post('/admin/videos', data)
 export const apiUpdateVideo = (id: number, data: Record<string, unknown>) => http.put(`/admin/videos/${id}`, data)
+export const apiRetranscodeVideo = (id: number) => http.post(`/admin/videos/${id}/retranscode`)
 export const apiDeleteVideo = (id: number) => http.delete(`/admin/videos/${id}`)
 
 // Categories

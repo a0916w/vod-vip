@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\TranscodeVideoJob;
 use App\Models\MediaResource;
 use App\Models\Video;
 use Illuminate\Http\JsonResponse;
@@ -50,16 +51,19 @@ class MediaManageController extends Controller
         $video = Video::create([
             'title' => $data['title'] ?? $resource->caption ?? $resource->file_name,
             'cover_url' => "https://picsum.photos/seed/m{$resource->id}/400/225",
-            'video_url' => '/storage/' . $resource->local_path,
+            'video_url' => $resource->local_path,
             'is_vip' => $data['is_vip'] ?? 0,
             'category_id' => $data['category_id'],
             'description' => $resource->caption,
             'duration' => $resource->duration ?? 0,
+            'transcode_status' => 'pending',
         ]);
 
         $resource->update(['synced_to_video' => true]);
 
-        return response()->json(['message' => '同步成功', 'video' => $video], 201);
+        TranscodeVideoJob::dispatch($video->id);
+
+        return response()->json(['message' => '同步成功，转码已排队', 'video' => $video], 201);
     }
 
     public function destroy(int $id): JsonResponse

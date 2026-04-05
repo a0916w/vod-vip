@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Artplayer from 'artplayer'
+import Hls from 'hls.js'
 import { apiVideoDetail, apiToggleFavorite, type VideoDetail } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import VipOverlay from '@/components/VipOverlay.vue'
@@ -38,6 +39,7 @@ async function toggleFavorite() {
 }
 
 let player: Artplayer | null = null
+let hls: Hls | null = null
 const playerRef = ref<HTMLDivElement>()
 
 function formatDuration(seconds: number): string {
@@ -72,10 +74,9 @@ async function loadVideo() {
 function initPlayer(data: VideoDetail) {
   if (!playerRef.value || !data.play_url) return
 
-  player = new Artplayer({
+  const opts: Record<string, unknown> = {
     container: playerRef.value,
     url: data.play_url,
-    type: 'mp4',
     poster: data.cover_url,
     autoplay: false,
     pip: true,
@@ -88,9 +89,35 @@ function initPlayer(data: VideoDetail) {
     setting: true,
     flip: true,
     aspectRatio: true,
-  })
+  }
 
-  // 非 VIP 观看 VIP 内容：30 秒后自动暂停
+  if (data.play_type === 'hls') {
+    opts.type = 'm3u8'
+    opts.customType = {
+      m3u8: (videoEl: HTMLVideoElement, url: string) => {
+        if (Hls.isSupported()) {
+          hls = new Hls({
+            xhrSetup: (xhr: XMLHttpRequest, reqUrl: string) => {
+              if (reqUrl.includes('/key') || reqUrl.includes('enc.key') || reqUrl.includes('key.bin')) {
+                if (data.key_url) {
+                  xhr.open('GET', data.key_url, true)
+                }
+              }
+            },
+          })
+          hls.loadSource(url)
+          hls.attachMedia(videoEl)
+        } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+          videoEl.src = url
+        }
+      },
+    }
+  } else {
+    opts.type = 'mp4'
+  }
+
+  player = new Artplayer(opts as ConstructorParameters<typeof Artplayer>[0])
+
   if (data.is_vip && !data.can_play_full) {
     player.on('video:timeupdate', () => {
       if (player && player.currentTime >= 30) {
@@ -106,6 +133,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  hls?.destroy()
   player?.destroy()
 })
 </script>
@@ -117,14 +145,29 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="video" class="space-y-6">
+      <!-- 转码中提示 -->
+      <div
+        v-if="video.transcode_status && video.transcode_status !== 'done'"
+        class="rounded-xl border border-amber-500/30 bg-amber-500/5 px-5 py-4 text-center"
+      >
+        <template v-if="video.transcode_status === 'pending' || video.transcode_status === 'processing'">
+          <div class="mb-2 flex items-center justify-center gap-2">
+            <div class="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
+            <span class="font-medium text-amber-400">视频转码中，请稍后刷新...</span>
+          </div>
+          <p class="text-xs text-gray-500">转码完成后即可播放加密 HLS 流</p>
+        </template>
+        <template v-else-if="video.transcode_status === 'failed'">
+          <span class="font-medium text-red-400">视频转码失败</span>
+        </template>
+      </div>
+
       <!-- 播放器区域 -->
       <div class="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
         <div ref="playerRef" class="h-full w-full"></div>
 
-        <!-- VIP 遮罩层 -->
         <VipOverlay v-if="showVipOverlay" />
 
-        <!-- 无播放地址 -->
         <div v-if="!video.play_url" class="absolute inset-0 flex flex-col items-center justify-center bg-black">
           <VipOverlay />
         </div>

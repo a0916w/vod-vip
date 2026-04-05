@@ -32,6 +32,9 @@ export interface VideoDetail {
   is_vip: boolean
   can_play_full: boolean
   play_url: string | null
+  play_type: 'hls' | 'mp4'
+  key_url: string | null
+  transcode_status: string | null
   preview_url: string | null
   description: string | null
   duration: number

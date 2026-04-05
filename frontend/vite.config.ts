@@ -31,6 +31,6 @@ export default defineConfig(({ command }) => ({
       : undefined,
   },
   ssr: {
-    noExternal: ['artplayer'],
+    noExternal: ['artplayer', 'hls.js'],
   },
 }))

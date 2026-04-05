@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\VideoManageController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\HlsController;
 use App\Http\Controllers\Api\MediaResourceController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\VideoController;
@@ -34,6 +35,9 @@ Route::get('/vip/plans', [VipController::class, 'plans']);
 
 // 支付回调（第三方调用，不需要用户 Token）
 Route::post('/payment/callback', [VipController::class, 'paymentCallback']);
+
+// HLS 加密密钥（签名验证，不需要用户 Token）
+Route::get('/hls/key/{videoId}', [HlsController::class, 'key']);
 
 // Telegram Bot Webhook（TG 服务器回调，不需要用户 Token）
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
@@ -72,8 +76,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/videos', [VideoManageController::class, 'index']);
+    Route::get('/videos/{id}', [VideoManageController::class, 'show']);
     Route::post('/videos', [VideoManageController::class, 'store']);
     Route::put('/videos/{id}', [VideoManageController::class, 'update']);
+    Route::post('/videos/{id}/retranscode', [VideoManageController::class, 'retranscode']);
     Route::delete('/videos/{id}', [VideoManageController::class, 'destroy']);
 
     Route::get('/categories', [CategoryManageController::class, 'index']);

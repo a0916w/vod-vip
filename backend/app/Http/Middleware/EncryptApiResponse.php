@@ -13,6 +13,7 @@ class EncryptApiResponse
         'api/admin',
         'api/telegram',
         'api/payment',
+        'api/hls',
     ];
 
     public function handle(Request $request, Closure $next): Response
