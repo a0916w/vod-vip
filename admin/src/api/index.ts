@@ -1,6 +1,35 @@
 import axios from 'axios'
 
-const http = axios.create({ baseURL: '/api' })
+const API_KEY_HEX = '59faf81527de015abf93ea00493b659d650b045966e24b234c873d54c1073751'
+
+let _cryptoKey: CryptoKey | null = null
+
+async function getCryptoKey(): Promise<CryptoKey> {
+  if (_cryptoKey) return _cryptoKey
+  const raw = new Uint8Array(API_KEY_HEX.length / 2)
+  for (let i = 0; i < API_KEY_HEX.length; i += 2)
+    raw[i / 2] = parseInt(API_KEY_HEX.substring(i, i + 2), 16)
+  _cryptoKey = await crypto.subtle.importKey('raw', raw, { name: 'AES-CBC' }, false, ['decrypt'])
+  return _cryptoKey
+}
+
+async function decryptPayload(encoded: string): Promise<unknown> {
+  const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0))
+  const iv = bytes.slice(0, 16)
+  const ct = bytes.slice(16)
+  const key = await getCryptoKey()
+  const dec = await crypto.subtle.decrypt({ name: 'AES-CBC', iv }, key, ct)
+  return JSON.parse(new TextDecoder().decode(dec))
+}
+
+function isEncrypted(data: unknown): data is { _e: string } {
+  return !!data && typeof data === 'object' && '_e' in (data as Record<string, unknown>)
+}
+
+const http = axios.create({
+  baseURL: '/api',
+  headers: { Accept: 'application/json' },
+})
 
 http.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token')
@@ -9,8 +38,16 @@ http.interceptors.request.use((config) => {
 })
 
 http.interceptors.response.use(
-  (res) => res,
-  (err) => {
+  async (res) => {
+    if (isEncrypted(res.data)) {
+      try { res.data = await decryptPayload(res.data._e) } catch { /* pass */ }
+    }
+    return res
+  },
+  async (err) => {
+    if (isEncrypted(err.response?.data)) {
+      try { err.response.data = await decryptPayload(err.response.data._e) } catch { /* pass */ }
+    }
     if (err.response?.status === 401) {
       localStorage.removeItem('admin_token')
       window.location.href = '/login'
