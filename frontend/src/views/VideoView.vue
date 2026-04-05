@@ -120,7 +120,7 @@ function initPlayer(data: VideoDetail) {
 
   if (data.is_vip && !data.can_play_full) {
     player.on('video:timeupdate', () => {
-      if (player && player.currentTime >= 30) {
+      if (player && player.currentTime >= 60) {
         player.pause()
         showVipOverlay.value = true
       }
