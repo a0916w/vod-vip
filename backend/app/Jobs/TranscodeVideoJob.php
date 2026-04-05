@@ -29,11 +29,43 @@ class TranscodeVideoJob implements ShouldQueue
         $video->update(['transcode_status' => 'processing']);
 
         $disk = Storage::disk('public');
-        $inputPath = $disk->path($video->video_url);
+        $isRemote = str_starts_with($video->video_url, 'http://') || str_starts_with($video->video_url, 'https://');
+        $tempDownload = null;
+
+        if ($isRemote) {
+            $localDir = "downloads/{$video->id}";
+            $disk->makeDirectory($localDir);
+            $ext = pathinfo(parse_url($video->video_url, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'mp4';
+            $localRelative = "{$localDir}/original.{$ext}";
+            $localAbsolute = $disk->path($localRelative);
+
+            Log::info("TranscodeVideoJob: downloading remote video {$video->id}: {$video->video_url}");
+
+            try {
+                $stream = fopen($video->video_url, 'r');
+                if (! $stream) {
+                    throw new \RuntimeException('Failed to open remote URL');
+                }
+                file_put_contents($localAbsolute, $stream);
+                fclose($stream);
+            } catch (\Throwable $e) {
+                $video->update(['transcode_status' => 'failed']);
+                Log::error("TranscodeVideoJob: download failed for video {$video->id}: {$e->getMessage()}");
+
+                return;
+            }
+
+            $video->update(['video_url' => $localRelative]);
+            $inputPath = $localAbsolute;
+            $tempDownload = null; // keep the downloaded file
+        } else {
+            $inputPath = $disk->path($video->video_url);
+        }
 
         if (! file_exists($inputPath)) {
             $video->update(['transcode_status' => 'failed']);
             Log::error("TranscodeVideoJob: input file not found: {$inputPath}");
+
             return;
         }
 
