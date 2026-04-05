@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminOnly::class,
         ]);
 
+        $middleware->api(append: [
+            \App\Http\Middleware\EncryptApiResponse::class,
+        ]);
+
         $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {

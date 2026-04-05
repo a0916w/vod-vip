@@ -1,6 +1,7 @@
 import axios from 'axios'
-import { useAuthStore } from '@/stores/auth'
-import router from '@/router'
+import { decryptPayload } from './crypto'
+
+const isClient = typeof window !== 'undefined'
 
 const http = axios.create({
   baseURL: '/api',
@@ -9,20 +10,29 @@ const http = axios.create({
 })
 
 http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  if (isClient) {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
   }
   return config
 })
 
 http.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
+  async (res) => {
+    if (isClient && res.data && typeof res.data === 'object' && '_e' in res.data) {
+      res.data = await decryptPayload(res.data._e as string)
+    }
+    return res
+  },
+  async (err) => {
+    if (isClient && err.response?.status === 401) {
+      const { useAuthStore } = await import('@/stores/auth')
       const auth = useAuthStore()
       auth.logout()
-      router.push('/login')
+      const { useRouter } = await import('vue-router')
+      try { useRouter().push('/login') } catch { window.location.href = '/login' }
     }
     return Promise.reject(err)
   },
