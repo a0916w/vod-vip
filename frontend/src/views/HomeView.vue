@@ -49,8 +49,8 @@ onMounted(loadHome)
 <template>
   <div class="space-y-10">
     <!-- 搜索栏 -->
-    <div class="flex items-center gap-3">
-      <div class="relative flex-1">
+    <div class="mx-auto max-w-xl">
+      <div class="relative">
         <input
           v-model="keyword"
           @keyup.enter="search"
