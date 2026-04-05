@@ -2,7 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Models\MediaResource;
 use App\Models\Video;
+use App\Services\TelegramBotService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -112,6 +114,8 @@ class TranscodeVideoJob implements ShouldQueue
                 'exit' => $result->exitCode(),
                 'stderr' => mb_substr($result->errorOutput(), -2000),
             ]);
+            $this->notifyBot($video, 'failed');
+
             return;
         }
 
@@ -122,5 +126,28 @@ class TranscodeVideoJob implements ShouldQueue
         ]);
 
         Log::info("TranscodeVideoJob: completed for video {$video->id}");
+        $this->notifyBot($video, 'done');
+    }
+
+    private function notifyBot(Video $video, string $status): void
+    {
+        try {
+            $resource = MediaResource::where('local_path', $video->video_url)
+                ->where('synced_to_video', true)
+                ->first();
+
+            $chatId = $resource?->from_user_id;
+            if (! $chatId) {
+                return;
+            }
+
+            $emoji = $status === 'done' ? '✅' : '❌';
+            $label = $status === 'done' ? 'HLS 转码完成' : 'HLS 转码失败';
+            $msg = "{$emoji} {$label}\n📹 {$video->title}\n🆔 Video #{$video->id}";
+
+            app(TelegramBotService::class)->sendMessage($chatId, $msg);
+        } catch (\Throwable $e) {
+            Log::warning("TranscodeVideoJob: bot notify failed: {$e->getMessage()}");
+        }
     }
 }

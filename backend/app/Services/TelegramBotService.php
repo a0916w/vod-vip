@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Jobs\TranscodeVideoJob;
+use App\Models\Category;
 use App\Models\MediaResource;
+use App\Models\Video;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -179,7 +182,16 @@ class TelegramBotService
                 default => '📄',
             };
 
-            $this->sendMessage($chatId, "{$typeEmoji} 入库成功！\n📁 {$resource->file_name}\n💾 {$sizeStr}\n🆔 #{$resource->id}");
+            $msg = "{$typeEmoji} 入库成功！\n📁 {$resource->file_name}\n💾 {$sizeStr}\n🆔 #{$resource->id}";
+
+            if ($fileType === 'video') {
+                $video = $this->autoSyncToVideo($resource);
+                if ($video) {
+                    $msg .= "\n\n🔄 已自动同步到视频库 (Video #{$video->id})\n⏳ HLS 转码已排队...";
+                }
+            }
+
+            $this->sendMessage($chatId, $msg);
 
             Log::info("Telegram Bot: 文件入库成功", [
                 'id' => $resource->id,
@@ -194,6 +206,37 @@ class TelegramBotService
                 'file_id' => $fileId,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    private function autoSyncToVideo(MediaResource $resource): ?Video
+    {
+        try {
+            $defaultCategory = Category::where('slug', 'tg')->first();
+
+            $video = Video::create([
+                'title' => $resource->caption ?: $resource->file_name,
+                'cover_url' => "https://picsum.photos/seed/m{$resource->id}/400/225",
+                'video_url' => $resource->local_path,
+                'is_vip' => false,
+                'category_id' => $defaultCategory?->id ?? 1,
+                'description' => $resource->caption,
+                'duration' => $resource->duration ?? 0,
+                'transcode_status' => 'pending',
+            ]);
+
+            $resource->update(['synced_to_video' => true]);
+
+            TranscodeVideoJob::dispatch($video->id);
+
+            return $video;
+        } catch (\Throwable $e) {
+            Log::error("Telegram Bot: 自动同步视频失败", [
+                'resource_id' => $resource->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
         }
     }
 
