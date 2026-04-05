@@ -1,4 +1,4 @@
-const KEY_HEX = import.meta.env.VITE_API_ENCRYPT_KEY as string
+const KEY_HEX: string = (import.meta.env.VITE_API_ENCRYPT_KEY as string) ?? ''
 
 let _cryptoKey: CryptoKey | null = null
 
@@ -12,6 +12,9 @@ function hexToBytes(hex: string): Uint8Array {
 
 async function getCryptoKey(): Promise<CryptoKey> {
   if (_cryptoKey) return _cryptoKey
+  if (!KEY_HEX || KEY_HEX.length !== 64) {
+    throw new Error('VITE_API_ENCRYPT_KEY is missing or invalid')
+  }
   const raw = hexToBytes(KEY_HEX)
   _cryptoKey = await crypto.subtle.importKey('raw', raw, { name: 'AES-CBC' }, false, ['decrypt'])
   return _cryptoKey

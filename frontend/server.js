@@ -12,7 +12,7 @@ const apiTarget = process.env.API_URL || 'http://127.0.0.1:8000'
 async function createServer() {
   const app = express()
 
-  app.use('/api', createProxyMiddleware({ target: apiTarget, changeOrigin: true }))
+  app.use(createProxyMiddleware({ target: apiTarget, changeOrigin: true, pathFilter: '/api' }))
 
   let vite
   if (!isProduction) {

@@ -24,22 +24,30 @@ function search() {
 }
 
 async function loadHome() {
-  const [latestRes, recRes, catRes] = await Promise.all([
-    apiLatestVideos(),
-    apiRecommendedVideos(),
-    apiCategories(),
-  ])
-  latestVideos.value = latestRes.data
-  recommendedVideos.value = recRes.data
-  categories.value = catRes.data
+  try {
+    const [latestRes, recRes, catRes] = await Promise.all([
+      apiLatestVideos(),
+      apiRecommendedVideos(),
+      apiCategories(),
+    ])
+    latestVideos.value = latestRes.data
+    recommendedVideos.value = recRes.data
+    categories.value = catRes.data
 
-  if (auth.isLoggedIn) {
-    const allIds = [...latestRes.data, ...recRes.data].map((v) => v.id)
-    const unique = [...new Set(allIds)]
-    if (unique.length > 0) {
-      const { data } = await apiBatchCheckFavorites(unique)
-      favoritedIds.value = new Set(data.favorited_ids)
+    if (auth.isLoggedIn) {
+      try {
+        const allIds = [...latestRes.data, ...recRes.data].map((v) => v.id)
+        const unique = [...new Set(allIds)]
+        if (unique.length > 0) {
+          const { data } = await apiBatchCheckFavorites(unique)
+          favoritedIds.value = new Set(data.favorited_ids)
+        }
+      } catch {
+        // ignore — favorites check failure should not break the page
+      }
     }
+  } catch (e) {
+    console.error('Failed to load homepage data', e)
   }
 }
 
