@@ -4,15 +4,22 @@ import { apiDashboard } from '@/api'
 
 const data = ref<any>(null)
 const loading = ref(true)
+const error = ref(false)
 
-onMounted(async () => {
+async function loadDashboard() {
+  loading.value = true
+  error.value = false
   try {
     const res = await apiDashboard()
     data.value = res.data
+  } catch {
+    error.value = true
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadDashboard)
 </script>
 
 <template>
@@ -21,6 +28,11 @@ onMounted(async () => {
 
     <div v-if="loading" class="flex justify-center py-20">
       <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
+    </div>
+
+    <div v-else-if="error" class="py-16 text-center">
+      <p class="mb-4 text-gray-500">仪表盘数据加载失败</p>
+      <button @click="loadDashboard" class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black hover:bg-amber-400">重试</button>
     </div>
 
     <template v-else-if="data">

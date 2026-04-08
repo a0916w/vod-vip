@@ -11,6 +11,7 @@ const routes = [
   { path: '/register', name: 'register', component: () => import('@/views/RegisterView.vue') },
   { path: '/favorites', name: 'favorites', component: () => import('@/views/FavoritesView.vue'), meta: { requiresAuth: true, requiresVip: true } },
   { path: '/vip', name: 'vip', component: () => import('@/views/VipView.vue'), meta: { requiresAuth: true } },
+  { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') },
 ]
 
 export function createAppRouter(): Router {

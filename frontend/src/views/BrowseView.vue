@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiVideos, apiCategories, apiBatchCheckFavorites, type Video, type Category } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import VideoCard from '@/components/VideoCard.vue'
+import Pagination from '@/components/Pagination.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,14 +19,12 @@ const currentPage = ref(1)
 const lastPage = ref(1)
 const favoritedIds = ref<Set<number>>(new Set())
 const hasSelected = ref(false)
-
-const activeCategoryName = computed(() => {
-  if (activeCategory.value === null) return '全部'
-  return categories.value.find(c => c.id === activeCategory.value)?.name ?? ''
-})
+const error = ref('')
+const catError = ref(false)
 
 async function loadVideos(page = 1) {
   loading.value = true
+  error.value = ''
   try {
     const params: Record<string, unknown> = { page, per_page: 12 }
     if (activeCategory.value) params.category_id = activeCategory.value
@@ -41,6 +40,8 @@ async function loadVideos(page = 1) {
       const { data: favData } = await apiBatchCheckFavorites(ids)
       if (favData.favorited_ids) favData.favorited_ids.forEach((id: number) => favoritedIds.value.add(id))
     }
+  } catch {
+    error.value = '加载失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -53,21 +54,14 @@ function selectCategory(id: number | null) {
   loadVideos(1)
 }
 
-function backToCategories() {
-  hasSelected.value = false
-  activeCategory.value = null
-  videos.value = []
-  router.replace({ query: {} })
-}
-
-function search() {
-  hasSelected.value = true
-  loadVideos(1)
-}
-
 onMounted(async () => {
-  const { data } = await apiCategories()
-  categories.value = data
+  try {
+    const { data } = await apiCategories()
+    categories.value = data
+  } catch {
+    catError.value = true
+    return
+  }
 
   const catQuery = route.query.cat
   const qQuery = route.query.q
@@ -95,8 +89,13 @@ onMounted(async () => {
       <RouterLink to="/" class="text-sm text-gray-500 transition hover:text-white">← 返回首页</RouterLink>
     </div>
 
+    <div v-if="catError" class="py-16 text-center">
+      <p class="mb-4 text-gray-500">分类加载失败，请稍后重试</p>
+      <button @click="$router.go(0)" class="rounded-full bg-amber-500 px-6 py-2 text-sm font-medium text-black transition hover:bg-amber-400">刷新页面</button>
+    </div>
+
     <!-- 未选分类：展示分类卡片 -->
-    <template v-if="!hasSelected">
+    <template v-else-if="!hasSelected">
       <div class="grid grid-cols-3 gap-3 md:grid-cols-6">
         <button
           @click="selectCategory(null)"
@@ -133,6 +132,10 @@ onMounted(async () => {
       <div v-if="loading" class="flex justify-center py-16">
         <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
       </div>
+      <div v-else-if="error" class="py-16 text-center">
+        <p class="mb-4 text-gray-500">{{ error }}</p>
+        <button @click="loadVideos(currentPage)" class="rounded-full bg-amber-500 px-6 py-2 text-sm font-medium text-black transition hover:bg-amber-400">重试</button>
+      </div>
       <div v-else-if="videos.length === 0" class="py-16 text-center text-gray-500">暂无视频</div>
       <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         <VideoCard
@@ -143,13 +146,7 @@ onMounted(async () => {
         />
       </div>
 
-      <div v-if="lastPage > 1" class="flex justify-center gap-2">
-        <button
-          v-for="p in lastPage" :key="p"
-          @click="loadVideos(p)"
-          :class="['h-9 w-9 rounded-lg text-sm transition', p === currentPage ? 'bg-amber-500 font-bold text-black' : 'bg-gray-800 text-gray-400 hover:bg-gray-700']"
-        >{{ p }}</button>
-      </div>
+      <Pagination :current-page="currentPage" :last-page="lastPage" @change="loadVideos" />
     </template>
   </div>
 </template>

@@ -70,6 +70,7 @@ function formatViews(count: number): string {
         :alt="video.title"
         class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         loading="lazy"
+        @error="(e: Event) => { (e.target as HTMLImageElement).src = `data:image/svg+xml,${encodeURIComponent('<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;400&quot; height=&quot;225&quot; fill=&quot;%23111827&quot;><rect width=&quot;400&quot; height=&quot;225&quot;/><text x=&quot;200&quot; y=&quot;118&quot; text-anchor=&quot;middle&quot; fill=&quot;%234b5563&quot; font-size=&quot;14&quot; font-family=&quot;sans-serif&quot;>封面加载失败</text></svg>')}` }"
       />
       <!-- VIP 标签 -->
       <span

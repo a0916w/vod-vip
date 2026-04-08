@@ -5,8 +5,9 @@ import Hls from 'hls.js'
 import {
   apiVideos, apiVideoDetail, apiCreateVideo, apiUpdateVideo,
   apiDeleteVideo, apiRetranscodeVideo, apiCategories,
-  type Video, type Category, type VideoPlayInfo,
+  type Video, type Category,
 } from '@/api'
+import Pagination from '@/components/Pagination.vue'
 
 const videos = ref<Video[]>([])
 const categories = ref<Category[]>([])
@@ -19,6 +20,7 @@ const showModal = ref(false)
 const editingId = ref<number | null>(null)
 const form = ref({ title: '', cover_url: '', video_url: '', preview_url: '', is_vip: false, category_id: 0, description: '', duration: 0 })
 const saving = ref(false)
+const error = ref('')
 
 const showPlayer = ref(false)
 const playerRef = ref<HTMLDivElement>()
@@ -64,19 +66,30 @@ async function save() {
     }
     showModal.value = false
     load(currentPage.value)
+  } catch (err: any) {
+    alert(err.response?.data?.message || '保存失败')
   } finally { saving.value = false }
 }
 
 async function remove(id: number) {
   if (!confirm('确定删除？')) return
-  await apiDeleteVideo(id)
-  load(currentPage.value)
+  try {
+    await apiDeleteVideo(id)
+    load(currentPage.value)
+  } catch (err: any) {
+    alert(err.response?.data?.message || '删除失败')
+  }
 }
 
 async function retranscode(id: number) {
   if (!confirm('确定重新转码？')) return
-  await apiRetranscodeVideo(id)
-  load(currentPage.value)
+  try {
+    await apiRetranscodeVideo(id)
+    alert('已加入转码队列')
+    load(currentPage.value)
+  } catch (err: any) {
+    alert(err.response?.data?.message || '转码请求失败')
+  }
 }
 
 function destroyPlayer() {
@@ -92,8 +105,16 @@ async function preview(id: number) {
   await nextTick()
   if (!playerRef.value) return
 
-  const { data } = await apiVideoDetail(id)
-  if (!data.play_url) return
+  let data
+  try {
+    const res = await apiVideoDetail(id)
+    data = res.data
+  } catch (err: any) {
+    alert(err.response?.data?.message || '获取视频信息失败')
+    showPlayer.value = false
+    return
+  }
+  if (!data.play_url) { alert('该视频暂无可播放地址'); showPlayer.value = false; return }
 
   const opts: Record<string, unknown> = {
     container: playerRef.value,
@@ -163,12 +184,17 @@ onUnmounted(() => destroyPlayer())
       <button @click="load(1)" class="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">搜索</button>
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-gray-800">
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
+    </div>
+
+    <div v-else class="overflow-hidden rounded-xl border border-gray-800">
       <table class="w-full text-sm">
         <thead><tr class="border-b border-gray-800 bg-gray-900/50 text-left text-gray-400">
           <th class="px-4 py-3">ID</th><th class="px-4 py-3">标题</th><th class="px-4 py-3">分类</th><th class="px-4 py-3">VIP</th><th class="px-4 py-3">格式</th><th class="px-4 py-3">播放</th><th class="px-4 py-3">操作</th>
         </tr></thead>
         <tbody>
+          <tr v-if="videos.length === 0"><td colspan="7" class="px-4 py-12 text-center text-gray-500">暂无视频</td></tr>
           <tr v-for="v in videos" :key="v.id" class="border-b border-gray-800/50 hover:bg-gray-900/30">
             <td class="px-4 py-3 text-gray-500">{{ v.id }}</td>
             <td class="px-4 py-3">{{ v.title }}</td>
@@ -187,8 +213,8 @@ onUnmounted(() => destroyPlayer())
       </table>
     </div>
 
-    <div v-if="lastPage > 1" class="mt-4 flex gap-1">
-      <button v-for="p in lastPage" :key="p" @click="load(p)" :class="['h-8 w-8 rounded text-xs', p === currentPage ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-400']">{{ p }}</button>
+    <div v-if="!loading" class="mt-4">
+      <Pagination :current-page="currentPage" :last-page="lastPage" @change="load" />
     </div>
 
     <!-- 视频预览弹窗 -->

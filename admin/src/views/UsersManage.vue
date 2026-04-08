@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { apiUsers, apiUpdateUser, apiDeleteUser, type User } from '@/api'
+import Pagination from '@/components/Pagination.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -24,16 +25,24 @@ async function load(page = 1) {
 
 async function toggleVip(u: any) {
   const isVip = u.vip_level >= 1
-  await apiUpdateUser(u.id, {
-    vip_level: isVip ? 0 : 1,
-    vip_expired_at: isVip ? null : new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 19).replace('T', ' '),
-  })
-  load(currentPage.value)
+  try {
+    await apiUpdateUser(u.id, {
+      vip_level: isVip ? 0 : 1,
+      vip_expired_at: isVip ? null : new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 19).replace('T', ' '),
+    })
+    load(currentPage.value)
+  } catch (err: any) {
+    alert(err.response?.data?.message || '操作失败')
+  }
 }
 
 async function toggleAdmin(u: any) {
-  await apiUpdateUser(u.id, { is_admin: !u.is_admin })
-  load(currentPage.value)
+  try {
+    await apiUpdateUser(u.id, { is_admin: !u.is_admin })
+    load(currentPage.value)
+  } catch (err: any) {
+    alert(err.response?.data?.message || '操作失败')
+  }
 }
 
 async function remove(id: number) {
@@ -58,12 +67,17 @@ onMounted(() => load())
       <button @click="load(1)" class="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">搜索</button>
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-gray-800">
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
+    </div>
+
+    <div v-else class="overflow-hidden rounded-xl border border-gray-800">
       <table class="w-full text-sm">
         <thead><tr class="border-b border-gray-800 bg-gray-900/50 text-left text-gray-400">
           <th class="px-4 py-3">ID</th><th class="px-4 py-3">昵称</th><th class="px-4 py-3">邮箱</th><th class="px-4 py-3">VIP</th><th class="px-4 py-3">管理员</th><th class="px-4 py-3">操作</th>
         </tr></thead>
         <tbody>
+          <tr v-if="users.length === 0"><td colspan="6" class="px-4 py-12 text-center text-gray-500">暂无用户</td></tr>
           <tr v-for="u in users" :key="u.id" class="border-b border-gray-800/50 hover:bg-gray-900/30">
             <td class="px-4 py-3 text-gray-500">{{ u.id }}</td>
             <td class="px-4 py-3">{{ u.nickname }}</td>
@@ -87,8 +101,8 @@ onMounted(() => load())
       </table>
     </div>
 
-    <div v-if="lastPage > 1" class="mt-4 flex gap-1">
-      <button v-for="p in lastPage" :key="p" @click="load(p)" :class="['h-8 w-8 rounded text-xs', p === currentPage ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-400']">{{ p }}</button>
+    <div v-if="!loading" class="mt-4">
+      <Pagination :current-page="currentPage" :last-page="lastPage" @change="load" />
     </div>
   </div>
 </template>

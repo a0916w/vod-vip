@@ -2,21 +2,26 @@
 import { ref, onMounted } from 'vue'
 import { apiFavorites, type Video } from '@/api'
 import VideoCard from '@/components/VideoCard.vue'
+import Pagination from '@/components/Pagination.vue'
 
 const videos = ref<Video[]>([])
 const loading = ref(false)
 const currentPage = ref(1)
 const lastPage = ref(1)
 const total = ref(0)
+const error = ref('')
 
 async function loadFavorites(page = 1) {
   loading.value = true
+  error.value = ''
   try {
     const { data } = await apiFavorites({ page, per_page: 12 })
     videos.value = data.data
     currentPage.value = data.current_page
     lastPage.value = data.last_page
     total.value = data.total
+  } catch {
+    error.value = '加载失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -38,6 +43,11 @@ onMounted(() => {
       <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
     </div>
 
+    <div v-else-if="error" class="py-20 text-center">
+      <p class="mb-4 text-gray-500">{{ error }}</p>
+      <button @click="loadFavorites(currentPage)" class="rounded-full bg-amber-500 px-6 py-2 text-sm font-medium text-black transition hover:bg-amber-400">重试</button>
+    </div>
+
     <div v-else-if="videos.length === 0" class="py-20 text-center">
       <div class="mb-4 text-5xl">🤍</div>
       <p class="text-gray-500">还没有收藏任何视频</p>
@@ -48,18 +58,8 @@ onMounted(() => {
       <VideoCard v-for="video in videos" :key="video.id" :video="video" />
     </div>
 
-    <div v-if="lastPage > 1" class="mt-8 flex items-center justify-center gap-2">
-      <button
-        v-for="page in lastPage"
-        :key="page"
-        @click="loadFavorites(page)"
-        :class="[
-          'h-9 w-9 rounded-lg text-sm transition',
-          page === currentPage ? 'bg-amber-500 font-bold text-black' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-        ]"
-      >
-        {{ page }}
-      </button>
+    <div class="mt-8">
+      <Pagination :current-page="currentPage" :last-page="lastPage" @change="loadFavorites" />
     </div>
   </div>
 </template>

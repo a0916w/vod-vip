@@ -16,6 +16,8 @@ const recommendedVideos = ref<Video[]>([])
 const categories = ref<Category[]>([])
 const favoritedIds = ref<Set<number>>(new Set())
 const keyword = ref('')
+const loading = ref(true)
+const error = ref(false)
 
 function search() {
   if (keyword.value.trim()) {
@@ -24,6 +26,8 @@ function search() {
 }
 
 async function loadHome() {
+  loading.value = true
+  error.value = false
   try {
     const [latestRes, recRes, catRes] = await Promise.all([
       apiLatestVideos(),
@@ -47,7 +51,10 @@ async function loadHome() {
       }
     }
   } catch (e) {
+    error.value = true
     console.error('Failed to load homepage data', e)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -75,39 +82,49 @@ onMounted(loadHome)
       </div>
     </div>
 
-    <!-- 最新更新 -->
-    <section>
-      <div class="mb-4 flex items-center justify-between">
-        <h2 class="flex items-center gap-2 text-lg font-bold">
-          <span class="h-5 w-1 rounded-full bg-amber-500"></span>
-          最新更新
-        </h2>
-        <RouterLink to="/browse?cat=all" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
-      </div>
-      <div v-if="latestVideos.length === 0" class="flex justify-center py-12">
-        <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
-      </div>
-      <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        <VideoCard v-for="v in latestVideos" :key="v.id" :video="v" :favorited="favoritedIds.has(v.id)" @favorite-changed="(id, fav) => fav ? favoritedIds.add(id) : favoritedIds.delete(id)" />
-      </div>
-    </section>
+    <!-- 全局加载 -->
+    <div v-if="loading" class="flex justify-center py-20">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
+    </div>
 
-    <!-- 为你推荐 -->
-    <section>
-      <div class="mb-4 flex items-center justify-between">
-        <h2 class="flex items-center gap-2 text-lg font-bold">
-          <span class="h-5 w-1 rounded-full bg-rose-500"></span>
-          为你推荐
-        </h2>
-        <RouterLink to="/browse?cat=all" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
-      </div>
-      <div v-if="recommendedVideos.length === 0" class="flex justify-center py-12">
-        <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
-      </div>
-      <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        <VideoCard v-for="v in recommendedVideos" :key="'rec-' + v.id" :video="v" :favorited="favoritedIds.has(v.id)" @favorite-changed="(id, fav) => fav ? favoritedIds.add(id) : favoritedIds.delete(id)" />
-      </div>
-    </section>
+    <!-- 全局错误 -->
+    <div v-else-if="error" class="py-20 text-center">
+      <div class="mb-4 text-4xl text-gray-700">:(</div>
+      <p class="mb-4 text-gray-500">加载失败，请稍后重试</p>
+      <button @click="loadHome" class="rounded-full bg-amber-500 px-6 py-2 text-sm font-medium text-black transition hover:bg-amber-400">重新加载</button>
+    </div>
+
+    <template v-else>
+      <!-- 最新更新 -->
+      <section>
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="flex items-center gap-2 text-lg font-bold">
+            <span class="h-5 w-1 rounded-full bg-amber-500"></span>
+            最新更新
+          </h2>
+          <RouterLink to="/browse?cat=all" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
+        </div>
+        <div v-if="latestVideos.length === 0" class="py-12 text-center text-gray-500">暂无视频</div>
+        <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <VideoCard v-for="v in latestVideos" :key="v.id" :video="v" :favorited="favoritedIds.has(v.id)" @favorite-changed="(id, fav) => fav ? favoritedIds.add(id) : favoritedIds.delete(id)" />
+        </div>
+      </section>
+
+      <!-- 为你推荐 -->
+      <section>
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="flex items-center gap-2 text-lg font-bold">
+            <span class="h-5 w-1 rounded-full bg-rose-500"></span>
+            为你推荐
+          </h2>
+          <RouterLink to="/browse?cat=all" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
+        </div>
+        <div v-if="recommendedVideos.length === 0" class="py-12 text-center text-gray-500">暂无推荐</div>
+        <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <VideoCard v-for="v in recommendedVideos" :key="'rec-' + v.id" :video="v" :favorited="favoritedIds.has(v.id)" @favorite-changed="(id, fav) => fav ? favoritedIds.add(id) : favoritedIds.delete(id)" />
+        </div>
+      </section>
+    </template>
 
     <!-- 分类快捷入口 -->
     <section v-if="categories.length > 0">

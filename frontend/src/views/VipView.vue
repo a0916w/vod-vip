@@ -13,18 +13,29 @@ const loading = ref(false)
 const showPayModal = ref(false)
 const paymentInfo = ref<Record<string, unknown> | null>(null)
 
+const pageError = ref('')
+
 async function loadPlans() {
-  const { data } = await apiVipPlans()
-  plans.value = data
+  try {
+    const { data } = await apiVipPlans()
+    plans.value = data
+  } catch {
+    pageError.value = '套餐加载失败，请刷新重试'
+  }
 }
 
 async function loadOrders() {
-  const { data } = await apiMyOrders()
-  orders.value = data.data
+  try {
+    const { data } = await apiMyOrders()
+    orders.value = data.data
+  } catch {
+    // silent — orders are secondary
+  }
 }
 
 async function handlePurchase() {
   loading.value = true
+  pageError.value = ''
   try {
     const { data } = await apiCreateOrder({
       plan: selectedPlan.value,
@@ -33,6 +44,8 @@ async function handlePurchase() {
     paymentInfo.value = data.payment_params
     showPayModal.value = true
     loadOrders()
+  } catch {
+    pageError.value = '下单失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -80,6 +93,8 @@ onMounted(() => {
         <div class="text-5xl">👑</div>
       </div>
     </div>
+
+    <div v-if="pageError" class="rounded-xl border border-red-500/30 bg-red-500/5 px-5 py-4 text-center text-sm text-red-400">{{ pageError }}</div>
 
     <!-- 套餐选择 -->
     <div>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiVideos, apiBatchCheckFavorites, type Video } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import VideoCard from '@/components/VideoCard.vue'
+import Pagination from '@/components/Pagination.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,11 +18,13 @@ const currentPage = ref(1)
 const lastPage = ref(1)
 const total = ref(0)
 const favoritedIds = ref<Set<number>>(new Set())
+const error = ref('')
 
 async function doSearch(page = 1) {
   if (!keyword.value.trim()) return
   loading.value = true
   searched.value = true
+  error.value = ''
   try {
     const { data } = await apiVideos({ keyword: keyword.value.trim(), page, per_page: 12 })
     videos.value = data.data
@@ -36,6 +39,8 @@ async function doSearch(page = 1) {
       const { data: favData } = await apiBatchCheckFavorites(ids)
       if (favData.favorited_ids) favData.favorited_ids.forEach((id: number) => favoritedIds.value.add(id))
     }
+  } catch {
+    error.value = '搜索失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -75,6 +80,11 @@ onMounted(() => {
       <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
     </div>
 
+    <div v-else-if="error" class="py-16 text-center">
+      <p class="mb-4 text-gray-500">{{ error }}</p>
+      <button @click="doSearch(1)" class="rounded-full bg-amber-500 px-6 py-2 text-sm font-medium text-black transition hover:bg-amber-400">重试</button>
+    </div>
+
     <template v-else-if="searched">
       <p class="text-sm text-gray-500">找到 <span class="text-white font-medium">{{ total }}</span> 个结果</p>
 
@@ -88,13 +98,7 @@ onMounted(() => {
         />
       </div>
 
-      <div v-if="lastPage > 1" class="flex justify-center gap-2">
-        <button
-          v-for="p in lastPage" :key="p"
-          @click="doSearch(p)"
-          :class="['h-9 w-9 rounded-lg text-sm transition', p === currentPage ? 'bg-amber-500 font-bold text-black' : 'bg-gray-800 text-gray-400 hover:bg-gray-700']"
-        >{{ p }}</button>
-      </div>
+      <Pagination :current-page="currentPage" :last-page="lastPage" @change="doSearch" />
     </template>
 
     <div v-else class="py-16 text-center text-gray-600">输入关键词开始搜索</div>

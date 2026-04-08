@@ -19,6 +19,7 @@ const router = createRouter({
         { path: 'users', name: 'users', component: () => import('@/views/UsersManage.vue') },
         { path: 'orders', name: 'orders', component: () => import('@/views/OrdersManage.vue') },
         { path: 'media', name: 'media', component: () => import('@/views/MediaManage.vue') },
+        { path: ':pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') },
       ],
     },
   ],

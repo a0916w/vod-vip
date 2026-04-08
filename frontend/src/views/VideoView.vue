@@ -3,9 +3,10 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Artplayer from 'artplayer'
 import Hls from 'hls.js'
-import { apiVideoDetail, apiToggleFavorite, type VideoDetail } from '@/api'
+import { apiVideoDetail, apiToggleFavorite, apiVideos, type VideoDetail, type Video } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import VipOverlay from '@/components/VipOverlay.vue'
+import VideoCard from '@/components/VideoCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,9 +14,11 @@ const auth = useAuthStore()
 
 const video = ref<VideoDetail | null>(null)
 const loading = ref(true)
+const error = ref<string | null>(null)
 const showVipOverlay = ref(false)
 const isFavorited = ref(false)
 const favLoading = ref(false)
+const relatedVideos = ref<Video[]>([])
 
 async function toggleFavorite() {
   if (!video.value) return
@@ -57,6 +60,7 @@ function formatViews(count: number): string {
 
 async function loadVideo() {
   loading.value = true
+  error.value = null
   try {
     const { data } = await apiVideoDetail(Number(route.params.id))
     video.value = data
@@ -65,9 +69,10 @@ async function loadVideo() {
 
     await nextTick()
     initPlayer(data)
-  } catch (e) {
+    loadRelated(data)
+  } catch (e: any) {
     loading.value = false
-    throw e
+    error.value = e.response?.status === 404 ? '视频不存在或已被删除' : '加载失败，请稍后重试'
   }
 }
 
@@ -128,6 +133,17 @@ function initPlayer(data: VideoDetail) {
   }
 }
 
+async function loadRelated(current: VideoDetail) {
+  try {
+    const params: Record<string, unknown> = { per_page: 8 }
+    if (current.category?.id) params.category_id = current.category.id
+    const { data } = await apiVideos(params)
+    relatedVideos.value = data.data.filter(v => v.id !== current.id).slice(0, 8)
+  } catch {
+    // non-critical
+  }
+}
+
 onMounted(() => {
   loadVideo()
 })
@@ -142,6 +158,15 @@ onUnmounted(() => {
   <div>
     <div v-if="loading" class="flex items-center justify-center py-20">
       <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
+    </div>
+
+    <div v-else-if="error" class="py-20 text-center">
+      <div class="mb-4 text-4xl text-gray-700">:(</div>
+      <p class="mb-4 text-gray-500">{{ error }}</p>
+      <div class="flex items-center justify-center gap-3">
+        <button @click="loadVideo" class="rounded-full bg-amber-500 px-6 py-2 text-sm font-medium text-black transition hover:bg-amber-400">重试</button>
+        <RouterLink to="/" class="rounded-full border border-gray-700 px-6 py-2 text-sm text-gray-400 transition hover:border-gray-500 hover:text-white">返回首页</RouterLink>
+      </div>
     </div>
 
     <div v-else-if="video" class="space-y-6">
@@ -165,12 +190,7 @@ onUnmounted(() => {
       <!-- 播放器区域 -->
       <div class="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
         <div ref="playerRef" class="h-full w-full"></div>
-
-        <VipOverlay v-if="showVipOverlay" />
-
-        <div v-if="!video.play_url" class="absolute inset-0 flex flex-col items-center justify-center bg-black">
-          <VipOverlay />
-        </div>
+        <VipOverlay v-if="showVipOverlay || !video.play_url" />
       </div>
 
       <!-- 视频信息 -->
@@ -220,6 +240,17 @@ onUnmounted(() => {
 
         <p v-if="video.description" class="text-sm leading-relaxed text-gray-400">{{ video.description }}</p>
       </div>
+
+      <!-- 推荐视频 -->
+      <section v-if="relatedVideos.length > 0">
+        <h2 class="mb-4 flex items-center gap-2 text-lg font-bold">
+          <span class="h-5 w-1 rounded-full bg-amber-500"></span>
+          推荐视频
+        </h2>
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <VideoCard v-for="v in relatedVideos" :key="v.id" :video="v" />
+        </div>
+      </section>
     </div>
   </div>
 </template>

@@ -7,10 +7,18 @@ const showModal = ref(false)
 const editingId = ref<number | null>(null)
 const form = ref({ name: '', slug: '', sort_order: 0 })
 const saving = ref(false)
+const loading = ref(true)
 
 async function load() {
-  const { data } = await apiCategories()
-  categories.value = data
+  loading.value = true
+  try {
+    const { data } = await apiCategories()
+    categories.value = data
+  } catch (err: any) {
+    alert(err.response?.data?.message || '加载分类失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 function openCreate() {
@@ -19,9 +27,9 @@ function openCreate() {
   showModal.value = true
 }
 
-function openEdit(c: Category) {
+function openEdit(c: any) {
   editingId.value = c.id
-  form.value = { name: c.name, slug: c.slug, sort_order: 0 }
+  form.value = { name: c.name, slug: c.slug, sort_order: c.sort_order ?? 0 }
   showModal.value = true
 }
 
@@ -35,6 +43,8 @@ async function save() {
     }
     showModal.value = false
     load()
+  } catch (err: any) {
+    alert(err.response?.data?.message || '保存失败')
   } finally { saving.value = false }
 }
 
@@ -58,12 +68,17 @@ onMounted(load)
       <button @click="openCreate" class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black hover:bg-amber-400">+ 新增分类</button>
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-gray-800">
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
+    </div>
+
+    <div v-else class="overflow-hidden rounded-xl border border-gray-800">
       <table class="w-full text-sm">
         <thead><tr class="border-b border-gray-800 bg-gray-900/50 text-left text-gray-400">
           <th class="px-4 py-3">ID</th><th class="px-4 py-3">名称</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3">视频数</th><th class="px-4 py-3">操作</th>
         </tr></thead>
         <tbody>
+          <tr v-if="categories.length === 0"><td colspan="5" class="px-4 py-12 text-center text-gray-500">暂无分类</td></tr>
           <tr v-for="c in categories" :key="c.id" class="border-b border-gray-800/50 hover:bg-gray-900/30">
             <td class="px-4 py-3 text-gray-500">{{ c.id }}</td>
             <td class="px-4 py-3">{{ c.name }}</td>

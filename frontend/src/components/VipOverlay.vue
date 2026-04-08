@@ -5,7 +5,7 @@ const auth = useAuthStore()
 </script>
 
 <template>
-  <div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+  <div class="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
     <div class="rounded-2xl bg-gray-900 p-8 text-center shadow-2xl">
       <div class="mb-4 text-5xl">🔒</div>
       <h3 class="mb-2 text-xl font-bold text-white">VIP 专属内容</h3>
