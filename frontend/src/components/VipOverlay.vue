@@ -10,7 +10,7 @@ const auth = useAuthStore()
       <div class="mb-4 text-5xl">🔒</div>
       <h3 class="mb-2 text-xl font-bold text-white">VIP 专属内容</h3>
       <p class="mb-6 text-sm text-gray-400">开通 VIP 即可解锁完整视频</p>
-      <div class="flex gap-3">
+      <div class="flex justify-center gap-3">
         <RouterLink
           v-if="!auth.isLoggedIn"
           to="/login"

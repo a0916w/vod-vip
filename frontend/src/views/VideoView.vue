@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Artplayer from 'artplayer'
 import Hls from 'hls.js'
@@ -58,9 +58,19 @@ function formatViews(count: number): string {
   return String(count)
 }
 
+function destroyPlayer() {
+  hls?.destroy()
+  hls = null
+  player?.destroy()
+  player = null
+  showVipOverlay.value = false
+}
+
 async function loadVideo() {
+  destroyPlayer()
   loading.value = true
   error.value = null
+  relatedVideos.value = []
   try {
     const { data } = await apiVideoDetail(Number(route.params.id))
     video.value = data
@@ -144,13 +154,17 @@ async function loadRelated(current: VideoDetail) {
   }
 }
 
+watch(() => route.params.id, () => {
+  loadVideo()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
 onMounted(() => {
   loadVideo()
 })
 
 onUnmounted(() => {
-  hls?.destroy()
-  player?.destroy()
+  destroyPlayer()
 })
 </script>
 
