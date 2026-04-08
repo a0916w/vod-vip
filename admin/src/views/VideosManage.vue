@@ -148,7 +148,7 @@ async function preview(id: number) {
     opts.type = 'mp4'
   }
 
-  artPlayer = new Artplayer(opts as ConstructorParameters<typeof Artplayer>[0])
+  artPlayer = new Artplayer(opts as unknown as ConstructorParameters<typeof Artplayer>[0])
 }
 
 function closePlayer() {
