@@ -63,7 +63,10 @@ function formatViews(count: number): string {
 </script>
 
 <template>
-  <RouterLink :to="`/video/${video.id}`" class="group block overflow-hidden rounded-lg bg-gray-900 transition hover:ring-2 hover:ring-amber-400/50">
+  <RouterLink
+    :to="`/video/${video.id}`"
+    class="group block overflow-hidden rounded-md border border-white/24 bg-[#1a2940]/60 shadow-[0_8px_24px_rgba(15,23,42,0.22)] transition hover:border-amber-300/80 hover:ring-1 hover:ring-amber-300/50 sm:rounded-lg"
+  >
     <div class="relative aspect-video overflow-hidden">
       <img
         :src="video.cover_url"
@@ -83,19 +86,19 @@ function formatViews(count: number): string {
       <button
         @click="toggleFav"
         :disabled="favLoading"
-        class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-base backdrop-blur-sm transition hover:bg-black/70"
+        class="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-sm backdrop-blur-sm transition hover:bg-black/70 sm:right-2 sm:top-2 sm:h-8 sm:w-8 sm:text-base"
         :title="isFav ? '取消收藏' : '收藏'"
       >
         {{ isFav ? '❤️' : '🤍' }}
       </button>
       <!-- 时长 -->
-      <span class="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-xs text-white">
+      <span class="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1 py-0.5 text-[11px] text-white sm:bottom-2 sm:right-2 sm:px-1.5 sm:text-xs">
         {{ formatDuration(video.duration) }}
       </span>
     </div>
-    <div class="p-3">
-      <h3 class="truncate text-sm font-medium text-white group-hover:text-amber-400">{{ video.title }}</h3>
-      <div class="mt-1 flex items-center justify-between text-xs text-gray-500">
+    <div class="p-2 sm:p-3">
+      <h3 class="truncate text-[13px] font-medium text-white group-hover:text-amber-400 sm:text-sm">{{ video.title }}</h3>
+      <div class="mt-1 flex items-center justify-between text-[11px] text-gray-500 sm:text-xs">
         <span>{{ video.category?.name }}</span>
         <span>{{ formatViews(video.view_count) }} 次播放</span>
       </div>

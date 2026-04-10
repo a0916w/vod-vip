@@ -11,6 +11,7 @@ class EncryptApiResponse
 {
     private const EXCLUDED_PREFIXES = [
         'api/admin',
+        'api/site-settings',
         'api/telegram',
         'api/payment',
         'api/hls',

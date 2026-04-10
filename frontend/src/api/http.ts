@@ -1,8 +1,6 @@
 import axios from 'axios'
 import { decryptPayload } from './crypto'
 
-const isClient = typeof window !== 'undefined'
-
 const http = axios.create({
   baseURL: '/api',
   timeout: 15000,
@@ -10,11 +8,9 @@ const http = axios.create({
 })
 
 http.interceptors.request.use((config) => {
-  if (isClient) {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
@@ -25,7 +21,7 @@ function isEncrypted(data: unknown): data is { _e: string } {
 
 http.interceptors.response.use(
   async (res) => {
-    if (isClient && isEncrypted(res.data)) {
+    if (isEncrypted(res.data)) {
       try {
         res.data = await decryptPayload(res.data._e)
       } catch {
@@ -35,7 +31,7 @@ http.interceptors.response.use(
     return res
   },
   async (err) => {
-    if (isClient && isEncrypted(err.response?.data)) {
+    if (isEncrypted(err.response?.data)) {
       try {
         err.response.data = await decryptPayload(err.response.data._e)
       } catch {
@@ -43,16 +39,11 @@ http.interceptors.response.use(
       }
     }
 
-    if (isClient && err.response?.status === 401) {
+    if (err.response?.status === 401) {
       const { useAuthStore } = await import('@/stores/auth')
       const auth = useAuthStore()
       auth.logout()
-      try {
-        const { useRouter } = await import('vue-router')
-        useRouter().push('/login')
-      } catch {
-        window.location.href = '/login'
-      }
+      window.location.href = '/login'
     }
     return Promise.reject(err)
   },

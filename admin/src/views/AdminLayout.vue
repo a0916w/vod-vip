@@ -12,6 +12,8 @@ const navItems = [
   { to: '/categories', label: '分类管理', icon: '📁' },
   { to: '/users', label: '用户管理', icon: '👥' },
   { to: '/orders', label: '订单管理', icon: '💰' },
+  { to: '/site-settings', label: '站点设置', icon: '⚙️' },
+  { to: '/marquees', label: '浮动文字', icon: '📢' },
   { to: '/media', label: '媒体资源', icon: '📥' },
 ]
 

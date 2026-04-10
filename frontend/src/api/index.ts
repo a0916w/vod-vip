@@ -41,6 +41,7 @@ export interface VideoDetail {
   view_count: number
   category: Category | null
   vip_required_message: string | null
+  vip_trial_seconds: number
   is_favorited: boolean
   created_at: string
 }
@@ -68,6 +69,30 @@ export interface Order {
   payment_method: string | null
   paid_at: string | null
   created_at: string
+}
+
+export interface MarqueeItem {
+  id: number
+  content: string
+  sort_order: number
+}
+
+export interface SiteSettings {
+  brand_badge: string
+  site_name: string
+  footer_text: string
+  browser_title: string
+  home_seo_title: string
+  logo_image_url: string
+  favicon_url: string
+  vip_trial_seconds: number
+  search_hint_text: string
+  search_hint_color: string
+  search_hint_font_size: number
+  search_hint_font_weight: 'normal' | 'bold'
+  search_hint_tail_color: string
+  search_hint_tail_font_size: number
+  search_hint_tail_font_weight: 'normal' | 'bold'
 }
 
 export interface Paginated<T> {
@@ -109,6 +134,12 @@ export const apiRecommendedVideos = () =>
 // Categories
 export const apiCategories = () =>
   http.get<Category[]>('/categories')
+
+export const apiMarquees = () =>
+  http.get<MarqueeItem[]>('/marquees')
+
+export const apiSiteSettings = () =>
+  http.get<SiteSettings>('/site-settings')
 
 // VIP
 export const apiVipPlans = () =>

@@ -2,11 +2,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiLogin, apiRegister, apiQuickRegister, apiLogout, apiMe, type User } from '@/api'
 
-const isClient = typeof window !== 'undefined'
-
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const token = ref<string | null>(isClient ? localStorage.getItem('token') : null)
+  const token = ref<string | null>(localStorage.getItem('token'))
   const isVip = ref(false)
   const userLoaded = ref(false)
   let fetchPromise: Promise<void> | null = null
@@ -16,7 +14,7 @@ export const useAuthStore = defineStore('auth', () => {
   function setAuth(u: User, t: string) {
     user.value = u
     token.value = t
-    if (isClient) localStorage.setItem('token', t)
+    localStorage.setItem('token', t)
   }
 
   async function login(account: string, password: string) {
@@ -68,7 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     token.value = null
     isVip.value = false
-    if (isClient) localStorage.removeItem('token')
+    localStorage.removeItem('token')
   }
 
   return { user, token, isLoggedIn, isVip, userLoaded, login, register, quickRegister, fetchUser, waitUntilReady, logout }

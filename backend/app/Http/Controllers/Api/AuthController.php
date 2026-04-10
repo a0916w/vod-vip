@@ -73,6 +73,10 @@ class AuthController extends Controller
             ]);
         }
 
+        $user->forceFill([
+            'last_login_at' => now(),
+        ])->save();
+
         $user->tokens()->delete();
         $token = $user->createToken('auth')->plainTextToken;
 

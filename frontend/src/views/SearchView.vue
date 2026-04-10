@@ -31,13 +31,18 @@ async function doSearch(page = 1) {
     currentPage.value = data.current_page
     lastPage.value = data.last_page
     total.value = data.total
+    favoritedIds.value = new Set()
 
     router.replace({ query: { q: keyword.value.trim() } })
 
     if (auth.isLoggedIn && data.data.length > 0) {
-      const ids = data.data.map((v) => v.id)
-      const { data: favData } = await apiBatchCheckFavorites(ids)
-      if (favData.favorited_ids) favData.favorited_ids.forEach((id: number) => favoritedIds.value.add(id))
+      try {
+        const ids = data.data.map((v) => v.id)
+        const { data: favData } = await apiBatchCheckFavorites(ids)
+        if (favData.favorited_ids) favData.favorited_ids.forEach((id: number) => favoritedIds.value.add(id))
+      } catch {
+        // 收藏状态获取失败不应阻塞搜索结果展示
+      }
     }
   } catch {
     error.value = '搜索失败，请稍后重试'
@@ -70,7 +75,7 @@ onMounted(() => {
         type="text"
         placeholder="输入视频名称..."
         autofocus
-        class="w-full rounded-full border border-gray-700 bg-gray-900 px-5 py-3 text-sm text-white placeholder-gray-500 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+        class="w-full rounded-full border border-white/20 bg-[#1a2940]/58 px-5 py-3 text-sm text-white placeholder:text-slate-300/65 outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
       />
       <button @click="doSearch(1)" class="absolute right-1.5 top-1.5 rounded-full bg-amber-500 px-5 py-1.5 text-sm font-medium text-black transition hover:bg-amber-400">搜索</button>
     </div>

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Artplayer from 'artplayer'
-import Hls from 'hls.js'
 import { apiVideoDetail, apiToggleFavorite, apiVideos, type VideoDetail, type Video } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import VipOverlay from '@/components/VipOverlay.vue'
@@ -41,8 +39,52 @@ async function toggleFavorite() {
   }
 }
 
-let player: Artplayer | null = null
-let hls: Hls | null = null
+type ArtplayerCtor = new (option: Record<string, unknown>) => {
+  on: (event: string, handler: () => void) => void
+  destroy: () => void
+  pause: () => void
+  currentTime: number
+  template: {
+    $progress: HTMLDivElement
+  }
+}
+
+type HlsModule = {
+  default: {
+    new (options?: Record<string, unknown>): {
+      loadSource: (url: string) => void
+      attachMedia: (videoEl: HTMLVideoElement) => void
+      destroy: () => void
+    }
+    isSupported: () => boolean
+  }
+}
+
+let artplayerCtorPromise: Promise<ArtplayerCtor> | null = null
+let hlsModulePromise: Promise<HlsModule> | null = null
+
+async function loadArtplayerCtor(): Promise<ArtplayerCtor> {
+  if (!artplayerCtorPromise) {
+    artplayerCtorPromise = import('artplayer').then((m) => m.default as unknown as ArtplayerCtor)
+  }
+  return artplayerCtorPromise
+}
+
+async function loadHlsModule(): Promise<HlsModule> {
+  if (!hlsModulePromise) {
+    hlsModulePromise = import('hls.js') as Promise<HlsModule>
+  }
+  return hlsModulePromise
+}
+
+let player: InstanceType<ArtplayerCtor> | null = null
+let hls: {
+  loadSource: (url: string) => void
+  attachMedia: (videoEl: HTMLVideoElement) => void
+  destroy: () => void
+} | null = null
+let trialLocked = false
+let initTaskId = 0
 const playerRef = ref<HTMLDivElement>()
 
 function formatDuration(seconds: number): string {
@@ -58,11 +100,33 @@ function formatViews(count: number): string {
   return String(count)
 }
 
+function trialProgressPercent(data: VideoDetail): number {
+  const trial = Math.max(0, Number(data.vip_trial_seconds || 0))
+  const total = Math.max(1, Number(data.duration || 1))
+  return Math.min(100, Math.max(0, (trial / total) * 100))
+}
+
+function applyTrialProgressMarker(data: VideoDetail) {
+  if (!player) return
+  const progress = player.template.$progress
+  progress.classList.remove('vip-trial-progress')
+  progress.style.removeProperty('--vip-trial-width')
+  progress.removeAttribute('data-trial-label')
+
+  if (!(data.is_vip && !data.can_play_full && data.vip_trial_seconds > 0)) return
+
+  progress.classList.add('vip-trial-progress')
+  progress.style.setProperty('--vip-trial-width', `${trialProgressPercent(data)}%`)
+  progress.setAttribute('data-trial-label', `试看 ${formatDuration(data.vip_trial_seconds)}`)
+}
+
 function destroyPlayer() {
+  initTaskId += 1
   hls?.destroy()
   hls = null
   player?.destroy()
   player = null
+  trialLocked = false
   showVipOverlay.value = false
 }
 
@@ -78,7 +142,8 @@ async function loadVideo() {
     loading.value = false
 
     await nextTick()
-    initPlayer(data)
+    initTaskId += 1
+    void initPlayer(data, initTaskId)
     loadRelated(data)
   } catch (e: any) {
     loading.value = false
@@ -86,8 +151,11 @@ async function loadVideo() {
   }
 }
 
-function initPlayer(data: VideoDetail) {
+async function initPlayer(data: VideoDetail, taskId: number) {
   if (!playerRef.value || !data.play_url) return
+
+  const Artplayer = await loadArtplayerCtor()
+  if (taskId !== initTaskId || !playerRef.value) return
 
   const opts: Record<string, unknown> = {
     container: playerRef.value,
@@ -107,6 +175,9 @@ function initPlayer(data: VideoDetail) {
   }
 
   if (data.play_type === 'hls') {
+    const HlsModule = await loadHlsModule()
+    if (taskId !== initTaskId) return
+    const Hls = HlsModule.default
     opts.type = 'm3u8'
     opts.customType = {
       m3u8: (videoEl: HTMLVideoElement, url: string) => {
@@ -131,11 +202,17 @@ function initPlayer(data: VideoDetail) {
     opts.type = 'mp4'
   }
 
-  player = new Artplayer(opts as ConstructorParameters<typeof Artplayer>[0])
+  if (taskId !== initTaskId || !playerRef.value) return
+  player = new Artplayer(opts)
+  applyTrialProgressMarker(data)
 
   if (data.is_vip && !data.can_play_full) {
+    const trialSeconds = Math.max(1, Number(data.vip_trial_seconds || 30))
     player.on('video:timeupdate', () => {
-      if (player && player.currentTime >= 60) {
+      if (!player || trialLocked) return
+      if (player.currentTime >= trialSeconds) {
+        trialLocked = true
+        player.currentTime = trialSeconds
         player.pause()
         showVipOverlay.value = true
       }
@@ -202,9 +279,12 @@ onUnmounted(() => {
       </div>
 
       <!-- 播放器区域 -->
-      <div class="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+      <div
+        class="relative z-0 aspect-video w-full overflow-hidden rounded-xl bg-black"
+        :class="{ 'vip-locked': showVipOverlay || !video.play_url }"
+      >
         <div ref="playerRef" class="h-full w-full"></div>
-        <VipOverlay v-if="showVipOverlay || !video.play_url" />
+        <VipOverlay v-if="showVipOverlay || !video.play_url" :trial-seconds="video?.vip_trial_seconds" />
       </div>
 
       <!-- 视频信息 -->
@@ -242,13 +322,6 @@ onUnmounted(() => {
               {{ isFavorited ? '已收藏' : '收藏' }}
             </button>
 
-            <RouterLink
-              v-if="video.is_vip && !video.can_play_full"
-              to="/vip"
-              class="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2 text-sm font-bold text-black transition hover:shadow-lg hover:shadow-amber-500/25"
-            >
-              开通 VIP 观看完整版
-            </RouterLink>
           </div>
         </div>
 
@@ -261,10 +334,50 @@ onUnmounted(() => {
           <span class="h-5 w-1 rounded-full bg-amber-500"></span>
           推荐视频
         </h2>
-        <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div class="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
           <VideoCard v-for="v in relatedVideos" :key="v.id" :video="v" />
         </div>
       </section>
     </div>
   </div>
 </template>
+
+<style scoped>
+.vip-locked :deep(.art-state),
+.vip-locked :deep(.art-bottom),
+.vip-locked :deep(.art-control),
+.vip-locked :deep(.art-setting),
+.vip-locked :deep(.art-info) {
+  display: none !important;
+}
+
+:deep(.vip-trial-progress) {
+  position: relative;
+}
+
+:deep(.vip-trial-progress::before) {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--vip-trial-width, 0%);
+  height: 2px;
+  border-radius: 9999px;
+  background: rgba(251, 191, 36, 0.95);
+  pointer-events: none;
+  z-index: 3;
+}
+
+:deep(.vip-trial-progress::after) {
+  content: attr(data-trial-label);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  font-size: 10px;
+  line-height: 1;
+  color: rgba(252, 211, 77, 0.95);
+  white-space: nowrap;
+  pointer-events: none;
+}
+</style>

@@ -27,6 +27,19 @@ const playerRef = ref<HTMLDivElement>()
 let artPlayer: Artplayer | null = null
 let hlsInstance: Hls | null = null
 
+const imageFallback =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" fill="#111827"><rect width="320" height="180" rx="16" ry="16"/><text x="160" y="94" text-anchor="middle" fill="#6b7280" font-size="18" font-family="sans-serif">封面预览</text></svg>',
+  )
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement | null
+  if (!target || target.dataset.fallbackApplied === 'true') return
+  target.dataset.fallbackApplied = 'true'
+  target.src = imageFallback
+}
+
 async function load(page = 1) {
   loading.value = true
   try {
@@ -191,13 +204,25 @@ onUnmounted(() => destroyPlayer())
     <div v-else class="overflow-hidden rounded-xl border border-gray-800">
       <table class="w-full text-sm">
         <thead><tr class="border-b border-gray-800 bg-gray-900/50 text-left text-gray-400">
-          <th class="px-4 py-3">ID</th><th class="px-4 py-3">标题</th><th class="px-4 py-3">分类</th><th class="px-4 py-3">VIP</th><th class="px-4 py-3">格式</th><th class="px-4 py-3">播放</th><th class="px-4 py-3">操作</th>
+          <th class="px-4 py-3">ID</th><th class="px-4 py-3">预览图</th><th class="px-4 py-3">标题</th><th class="px-4 py-3">分类</th><th class="px-4 py-3">VIP</th><th class="px-4 py-3">格式</th><th class="px-4 py-3">播放</th><th class="px-4 py-3">操作</th>
         </tr></thead>
         <tbody>
-          <tr v-if="videos.length === 0"><td colspan="7" class="px-4 py-12 text-center text-gray-500">暂无视频</td></tr>
+          <tr v-if="videos.length === 0"><td colspan="8" class="px-4 py-12 text-center text-gray-500">暂无视频</td></tr>
           <tr v-for="v in videos" :key="v.id" class="border-b border-gray-800/50 hover:bg-gray-900/30">
             <td class="px-4 py-3 text-gray-500">{{ v.id }}</td>
-            <td class="px-4 py-3">{{ v.title }}</td>
+            <td class="px-4 py-3">
+              <img
+                :src="v.cover_url || imageFallback"
+                :alt="v.title"
+                class="h-12 w-20 rounded-md border border-gray-800 object-cover"
+                loading="lazy"
+                @error="handleImageError"
+              />
+            </td>
+            <td class="px-4 py-3">
+              <div class="max-w-md truncate">{{ v.title }}</div>
+              <div class="mt-1 text-xs text-gray-500">{{ v.cover_url ? '已设置预览图' : '未设置预览图' }}</div>
+            </td>
             <td class="px-4 py-3 text-gray-400">{{ v.category?.name }}</td>
             <td class="px-4 py-3"><span :class="v.is_vip ? 'text-amber-400' : 'text-gray-600'">{{ v.is_vip ? 'VIP' : '免费' }}</span></td>
             <td class="px-4 py-3"><span :class="statusColor(v.transcode_status)">{{ statusLabel(v.transcode_status) }}</span></td>
@@ -237,8 +262,17 @@ onUnmounted(() => destroyPlayer())
           <form @submit.prevent="save" class="space-y-3">
             <input v-model="form.title" placeholder="标题" required class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
             <input v-model="form.video_url" placeholder="视频相对路径 (如 telegram/videos/xxx.mp4)" required class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
-            <input v-model="form.cover_url" placeholder="封面链接" required class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
+            <input v-model="form.cover_url" placeholder="预览图链接 / 封面链接" required class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
             <input v-model="form.preview_url" placeholder="试看链接（可选）" class="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-amber-500" />
+            <div class="rounded-xl border border-gray-800 bg-gray-950/60 p-3">
+              <div class="mb-2 text-xs text-gray-500">预览图效果</div>
+              <img
+                :src="form.cover_url || imageFallback"
+                alt="封面预览"
+                class="aspect-video w-full rounded-lg border border-gray-800 object-cover"
+                @error="handleImageError"
+              />
+            </div>
             <div class="flex gap-3">
               <select v-model="form.category_id" class="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none">
                 <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>

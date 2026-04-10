@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   apiLatestVideos, apiRecommendedVideos, apiCategories,
-  apiBatchCheckFavorites, type Video, type Category,
+  apiBatchCheckFavorites, apiSiteSettings, type Video, type Category,
 } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import VideoCard from '@/components/VideoCard.vue'
@@ -18,6 +18,25 @@ const favoritedIds = ref<Set<number>>(new Set())
 const keyword = ref('')
 const loading = ref(true)
 const error = ref(false)
+const searchHintText = ref('')
+const searchHintColor = ref('#f8fafc')
+const searchHintFontSize = ref(14)
+const searchHintFontWeight = ref<'normal' | 'bold'>('normal')
+const searchHintTailColor = ref('#f59e0b')
+const searchHintTailFontSize = ref(14)
+const searchHintTailFontWeight = ref<'normal' | 'bold'>('bold')
+
+const hintHeadText = computed(() => {
+  const chars = Array.from(searchHintText.value || '')
+  if (chars.length <= 4) return ''
+  return chars.slice(0, chars.length - 4).join('')
+})
+
+const hintTailText = computed(() => {
+  const chars = Array.from(searchHintText.value || '')
+  if (chars.length <= 4) return chars.join('')
+  return chars.slice(-4).join('')
+})
 
 function search() {
   if (keyword.value.trim()) {
@@ -29,14 +48,22 @@ async function loadHome() {
   loading.value = true
   error.value = false
   try {
-    const [latestRes, recRes, catRes] = await Promise.all([
+    const [latestRes, recRes, catRes, settingsRes] = await Promise.all([
       apiLatestVideos(),
       apiRecommendedVideos(),
       apiCategories(),
+      apiSiteSettings(),
     ])
     latestVideos.value = latestRes.data
     recommendedVideos.value = recRes.data
     categories.value = catRes.data
+    searchHintText.value = settingsRes.data.search_hint_text || ''
+    searchHintColor.value = settingsRes.data.search_hint_color || '#f8fafc'
+    searchHintFontSize.value = Number(settingsRes.data.search_hint_font_size || 14)
+    searchHintFontWeight.value = settingsRes.data.search_hint_font_weight || 'normal'
+    searchHintTailColor.value = settingsRes.data.search_hint_tail_color || '#f59e0b'
+    searchHintTailFontSize.value = Number(settingsRes.data.search_hint_tail_font_size || 14)
+    searchHintTailFontWeight.value = settingsRes.data.search_hint_tail_font_weight || 'bold'
 
     if (auth.isLoggedIn) {
       try {
@@ -62,16 +89,29 @@ onMounted(loadHome)
 </script>
 
 <template>
-  <div class="space-y-10">
+  <div class="space-y-7 sm:space-y-10">
     <!-- 搜索栏 -->
     <div class="mx-auto max-w-xl">
+      <p
+        v-if="searchHintText"
+        class="mb-2 text-center text-xs sm:text-sm"
+        :style="{ color: searchHintColor, fontSize: `${searchHintFontSize}px`, fontWeight: searchHintFontWeight }"
+      >
+        <span>{{ hintHeadText }}</span>
+        <span
+          v-if="hintTailText"
+          :style="{ color: searchHintTailColor, fontSize: `${searchHintTailFontSize}px`, fontWeight: searchHintTailFontWeight }"
+        >
+          {{ hintTailText }}
+        </span>
+      </p>
       <div class="relative">
         <input
           v-model="keyword"
           @keyup.enter="search"
           type="text"
           placeholder="搜索你想看的视频..."
-          class="w-full rounded-full border border-gray-700 bg-gray-900 px-5 py-2.5 text-sm text-white placeholder-gray-500 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+          class="w-full rounded-full border border-white/20 bg-[#1a2940]/58 px-5 py-2.5 text-sm text-white placeholder:text-slate-300/65 outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
         />
         <button
           @click="search"
@@ -105,7 +145,7 @@ onMounted(loadHome)
           <RouterLink to="/browse?cat=all" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
         </div>
         <div v-if="latestVideos.length === 0" class="py-12 text-center text-gray-500">暂无视频</div>
-        <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div v-else class="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
           <VideoCard v-for="v in latestVideos" :key="v.id" :video="v" :favorited="favoritedIds.has(v.id)" @favorite-changed="(id, fav) => fav ? favoritedIds.add(id) : favoritedIds.delete(id)" />
         </div>
       </section>
@@ -120,7 +160,7 @@ onMounted(loadHome)
           <RouterLink to="/browse?cat=all" class="text-sm text-amber-400 transition hover:text-amber-300">查看全部 →</RouterLink>
         </div>
         <div v-if="recommendedVideos.length === 0" class="py-12 text-center text-gray-500">暂无推荐</div>
-        <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div v-else class="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
           <VideoCard v-for="v in recommendedVideos" :key="'rec-' + v.id" :video="v" :favorited="favoritedIds.has(v.id)" @favorite-changed="(id, fav) => fav ? favoritedIds.add(id) : favoritedIds.delete(id)" />
         </div>
       </section>
@@ -132,21 +172,21 @@ onMounted(loadHome)
         <span class="h-5 w-1 rounded-full bg-blue-500"></span>
         分类浏览
       </h2>
-      <div class="grid grid-cols-3 gap-3 md:grid-cols-6">
+      <div class="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
         <RouterLink
           to="/browse"
-          class="group rounded-xl border border-gray-800 bg-gray-900 px-4 py-5 text-center transition hover:border-amber-500/50 hover:bg-amber-500/5"
+          class="group rounded-2xl bg-white/[0.08] px-4 py-5 text-center shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:bg-white/[0.14]"
         >
-          <div class="text-base font-medium text-white group-hover:text-amber-400">全部</div>
-          <div class="mt-1 text-xs text-gray-500">所有视频</div>
+          <div class="text-base font-semibold text-white group-hover:text-amber-300">全部</div>
+          <div class="mt-1 text-xs text-slate-300/80">所有视频</div>
         </RouterLink>
         <RouterLink
           v-for="cat in categories" :key="cat.id"
           :to="`/browse?cat=${cat.id}`"
-          class="group rounded-xl border border-gray-800 bg-gray-900 px-4 py-5 text-center transition hover:border-amber-500/50 hover:bg-amber-500/5"
+          class="group rounded-2xl bg-white/[0.08] px-4 py-5 text-center shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:bg-white/[0.14]"
         >
-          <div class="text-base font-medium text-white group-hover:text-amber-400">{{ cat.name }}</div>
-          <div class="mt-1 text-xs text-gray-500">{{ cat.videos_count ?? 0 }} 部</div>
+          <div class="text-base font-semibold text-white group-hover:text-amber-300">{{ cat.name }}</div>
+          <div class="mt-1 text-xs text-slate-300/80">{{ cat.videos_count ?? 0 }} 部</div>
         </RouterLink>
       </div>
     </section>

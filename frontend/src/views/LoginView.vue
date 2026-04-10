@@ -76,7 +76,7 @@ function goHome() {
 <template>
   <div class="mx-auto mt-16 max-w-md space-y-4">
     <!-- 登录 -->
-    <div class="rounded-2xl border border-gray-800 bg-gray-900 p-8">
+    <div class="rounded-2xl border border-white/12 bg-white/[0.07] p-8">
       <h2 class="mb-6 text-center text-2xl font-bold">登录</h2>
 
       <div v-if="error" class="mb-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">{{ error }}</div>
@@ -88,7 +88,7 @@ function goHome() {
             v-model="account"
             type="text"
             required
-            class="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
+            class="w-full rounded-lg border border-white/16 bg-[#1a2940]/70 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-400"
             placeholder="请输入用户名"
           />
         </div>
@@ -98,7 +98,7 @@ function goHome() {
             v-model="password"
             type="password"
             required
-            class="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
+            class="w-full rounded-lg border border-white/16 bg-[#1a2940]/70 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-400"
             placeholder="请输入密码"
           />
         </div>
@@ -118,11 +118,11 @@ function goHome() {
     </div>
 
     <!-- 快捷注册 -->
-    <div class="rounded-2xl border border-gray-800 bg-gray-900 p-6">
+    <div class="rounded-2xl border border-white/12 bg-white/[0.07] p-6">
       <div class="mb-4 flex items-center gap-3">
-        <div class="h-px flex-1 bg-gray-800"></div>
+        <div class="h-px flex-1 bg-white/10"></div>
         <span class="text-sm text-gray-500">快捷注册</span>
-        <div class="h-px flex-1 bg-gray-800"></div>
+        <div class="h-px flex-1 bg-white/10"></div>
       </div>
 
       <p class="mb-4 text-center text-xs text-gray-500">系统自动生成用户名和密码，点击即可完成注册</p>
@@ -142,14 +142,14 @@ function goHome() {
   <!-- 注册成功弹窗 -->
   <Teleport to="body">
     <div v-if="showCredentials" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div class="mx-4 w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+      <div class="mx-4 w-full max-w-sm rounded-2xl border border-white/14 bg-[#152136]/95 p-6 shadow-[0_18px_50px_rgba(2,6,23,0.5)]">
         <div class="mb-4 text-center">
           <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10 text-3xl">✅</div>
           <h3 class="text-xl font-bold">注册成功！</h3>
           <p class="mt-1 text-sm text-gray-400">请保存以下账号信息，用于下次登录</p>
         </div>
 
-        <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+        <div class="space-y-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
           <div class="flex items-center justify-between">
             <span class="text-sm text-gray-400">用户名</span>
             <span class="font-mono font-bold text-white">{{ createdNickname }}</span>
@@ -163,7 +163,7 @@ function goHome() {
         <div class="mt-4 space-y-2">
           <button
             @click="copyCredentials"
-            class="w-full rounded-lg border border-gray-700 bg-gray-800 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700"
+            class="w-full rounded-lg border border-white/16 bg-[#1a2940]/70 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
           >
             {{ copied ? '✅ 已复制' : '📋 复制账号密码' }}
           </button>

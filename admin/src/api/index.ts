@@ -62,6 +62,7 @@ export interface User {
   email: string | null
   vip_level: number
   vip_expired_at: string | null
+  last_login_at: string | null
   is_admin: boolean
   created_at: string
 }
@@ -120,6 +121,33 @@ export interface MediaResource {
   created_at: string
 }
 
+export interface MarqueeItem {
+  id: number
+  content: string
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SiteSettings {
+  brand_badge: string
+  site_name: string
+  footer_text: string
+  browser_title: string
+  home_seo_title: string
+  logo_image_url: string
+  favicon_url: string
+  vip_trial_seconds: number
+  search_hint_text: string
+  search_hint_color: string
+  search_hint_font_size: number
+  search_hint_font_weight: 'normal' | 'bold'
+  search_hint_tail_color: string
+  search_hint_tail_font_size: number
+  search_hint_tail_font_weight: 'normal' | 'bold'
+}
+
 export interface Paginated<T> {
   data: T[]
   current_page: number
@@ -160,6 +188,16 @@ export const apiDeleteUser = (id: number) => http.delete(`/admin/users/${id}`)
 
 // Orders
 export const apiOrders = (params?: Record<string, unknown>) => http.get<Paginated<Order>>('/admin/orders', { params })
+
+// Marquees
+export const apiMarquees = () => http.get<MarqueeItem[]>('/admin/marquees')
+export const apiCreateMarquee = (data: Record<string, unknown>) => http.post('/admin/marquees', data)
+export const apiUpdateMarquee = (id: number, data: Record<string, unknown>) => http.put(`/admin/marquees/${id}`, data)
+export const apiDeleteMarquee = (id: number) => http.delete(`/admin/marquees/${id}`)
+
+// Site settings
+export const apiSiteSettings = () => http.get<SiteSettings>('/admin/site-settings')
+export const apiUpdateSiteSettings = (data: SiteSettings) => http.put('/admin/site-settings', data)
 
 // Media
 export const apiMedia = (params?: Record<string, unknown>) => http.get<Paginated<MediaResource>>('/admin/media', { params })

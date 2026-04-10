@@ -23,6 +23,9 @@ admin/dist/
 admin/.env
 admin/.env.local
 
+# Temp
+.tmp_remote/
+
 # IDE
 .idea/
 .vscode/

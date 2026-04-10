@@ -3,14 +3,18 @@
 use App\Http\Controllers\Admin\CategoryManageController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MediaManageController;
+use App\Http\Controllers\Admin\MarqueeManageController;
 use App\Http\Controllers\Admin\OrderManageController;
+use App\Http\Controllers\Admin\SiteSettingManageController;
 use App\Http\Controllers\Admin\UserManageController;
 use App\Http\Controllers\Admin\VideoManageController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\HlsController;
+use App\Http\Controllers\Api\MarqueeController;
 use App\Http\Controllers\Api\MediaResourceController;
+use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\VideoController;
 use App\Http\Controllers\Api\VipController;
@@ -26,6 +30,8 @@ Route::post('/quick-register', [AuthController::class, 'quickRegister']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/marquees', [MarqueeController::class, 'index']);
+Route::get('/site-settings', [SiteSettingController::class, 'show']);
 Route::get('/videos', [VideoController::class, 'index']);
 Route::get('/videos/latest', [VideoController::class, 'latest']);
 Route::get('/videos/recommended', [VideoController::class, 'recommended']);
@@ -92,6 +98,13 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::delete('/users/{id}', [UserManageController::class, 'destroy']);
 
     Route::get('/orders', [OrderManageController::class, 'index']);
+    Route::get('/site-settings', [SiteSettingManageController::class, 'show']);
+    Route::put('/site-settings', [SiteSettingManageController::class, 'update']);
+
+    Route::get('/marquees', [MarqueeManageController::class, 'index']);
+    Route::post('/marquees', [MarqueeManageController::class, 'store']);
+    Route::put('/marquees/{id}', [MarqueeManageController::class, 'update']);
+    Route::delete('/marquees/{id}', [MarqueeManageController::class, 'destroy']);
 
     Route::get('/media', [MediaManageController::class, 'index']);
     Route::post('/media/{id}/sync', [MediaManageController::class, 'syncToVideo']);

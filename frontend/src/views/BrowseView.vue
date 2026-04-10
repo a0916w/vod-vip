@@ -34,11 +34,16 @@ async function loadVideos(page = 1) {
     videos.value = data.data
     currentPage.value = data.current_page
     lastPage.value = data.last_page
+    favoritedIds.value = new Set()
 
     if (auth.isLoggedIn && data.data.length > 0) {
-      const ids = data.data.map((v) => v.id)
-      const { data: favData } = await apiBatchCheckFavorites(ids)
-      if (favData.favorited_ids) favData.favorited_ids.forEach((id: number) => favoritedIds.value.add(id))
+      try {
+        const ids = data.data.map((v) => v.id)
+        const { data: favData } = await apiBatchCheckFavorites(ids)
+        if (favData.favorited_ids) favData.favorited_ids.forEach((id: number) => favoritedIds.value.add(id))
+      } catch {
+        // 收藏状态获取失败不应阻塞分类页展示
+      }
     }
   } catch {
     error.value = '加载失败，请稍后重试'
@@ -96,36 +101,46 @@ onMounted(async () => {
 
     <!-- 未选分类：展示分类卡片 -->
     <template v-else-if="!hasSelected">
-      <div class="grid grid-cols-3 gap-3 md:grid-cols-6">
+      <div class="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
         <button
           @click="selectCategory(null)"
-          class="group rounded-xl border border-gray-800 bg-gray-900 px-4 py-5 text-center transition hover:border-amber-500/50 hover:bg-amber-500/5"
+          class="group rounded-2xl bg-white/[0.08] px-4 py-5 text-center shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:bg-white/[0.14]"
         >
-          <div class="text-base font-medium text-white group-hover:text-amber-400">全部</div>
-          <div class="mt-1 text-xs text-gray-500">所有视频</div>
+          <div class="text-base font-semibold text-white group-hover:text-amber-300">全部</div>
+          <div class="mt-1 text-xs text-slate-300/80">所有视频</div>
         </button>
         <button
           v-for="cat in categories" :key="cat.id"
           @click="selectCategory(cat.id)"
-          class="group rounded-xl border border-gray-800 bg-gray-900 px-4 py-5 text-center transition hover:border-amber-500/50 hover:bg-amber-500/5"
+          class="group rounded-2xl bg-white/[0.08] px-4 py-5 text-center shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:bg-white/[0.14]"
         >
-          <div class="text-base font-medium text-white group-hover:text-amber-400">{{ cat.name }}</div>
-          <div class="mt-1 text-xs text-gray-500">{{ cat.videos_count ?? 0 }} 部</div>
+          <div class="text-base font-semibold text-white group-hover:text-amber-300">{{ cat.name }}</div>
+          <div class="mt-1 text-xs text-slate-300/80">{{ cat.videos_count ?? 0 }} 部</div>
         </button>
       </div>
     </template>
 
     <!-- 已选分类：搜索 + 分类标签 + 视频列表 -->
     <template v-else>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-3">
         <button
           @click="selectCategory(null)"
-          :class="['rounded-full px-4 py-2 text-sm transition', activeCategory === null ? 'bg-amber-500 text-black font-medium' : 'bg-gray-800 text-gray-300 hover:bg-gray-700']"
+          :class="[
+            'rounded-full px-5 py-2.5 text-sm font-medium transition',
+            activeCategory === null
+              ? 'bg-amber-400 text-black shadow-[0_10px_30px_rgba(251,191,36,0.35)]'
+              : 'bg-white/[0.10] text-white hover:bg-white/[0.16]'
+          ]"
         >全部</button>
         <button
           v-for="cat in categories" :key="cat.id"
           @click="selectCategory(cat.id)"
-          :class="['rounded-full px-4 py-2 text-sm transition', activeCategory === cat.id ? 'bg-amber-500 text-black font-medium' : 'bg-gray-800 text-gray-300 hover:bg-gray-700']"
+          :class="[
+            'rounded-full px-5 py-2.5 text-sm font-medium transition',
+            activeCategory === cat.id
+              ? 'bg-amber-400 text-black shadow-[0_10px_30px_rgba(251,191,36,0.35)]'
+              : 'bg-white/[0.10] text-white hover:bg-white/[0.16]'
+          ]"
         >{{ cat.name }}</button>
       </div>
 

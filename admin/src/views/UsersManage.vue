@@ -11,6 +11,19 @@ const currentPage = ref(1)
 const lastPage = ref(1)
 const keyword = ref('')
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 async function load(page = 1) {
   loading.value = true
   try {
@@ -74,14 +87,15 @@ onMounted(() => load())
     <div v-else class="overflow-hidden rounded-xl border border-gray-800">
       <table class="w-full text-sm">
         <thead><tr class="border-b border-gray-800 bg-gray-900/50 text-left text-gray-400">
-          <th class="px-4 py-3">ID</th><th class="px-4 py-3">昵称</th><th class="px-4 py-3">邮箱</th><th class="px-4 py-3">VIP</th><th class="px-4 py-3">管理员</th><th class="px-4 py-3">操作</th>
+          <th class="px-4 py-3">ID</th><th class="px-4 py-3">昵称</th><th class="px-4 py-3">创建时间</th><th class="px-4 py-3">上次登录</th><th class="px-4 py-3">VIP</th><th class="px-4 py-3">管理员</th><th class="px-4 py-3">操作</th>
         </tr></thead>
         <tbody>
-          <tr v-if="users.length === 0"><td colspan="6" class="px-4 py-12 text-center text-gray-500">暂无用户</td></tr>
+          <tr v-if="users.length === 0"><td colspan="7" class="px-4 py-12 text-center text-gray-500">暂无用户</td></tr>
           <tr v-for="u in users" :key="u.id" class="border-b border-gray-800/50 hover:bg-gray-900/30">
             <td class="px-4 py-3 text-gray-500">{{ u.id }}</td>
             <td class="px-4 py-3">{{ u.nickname }}</td>
-            <td class="px-4 py-3 text-gray-400">{{ u.email }}</td>
+            <td class="px-4 py-3 text-gray-400">{{ formatDateTime(u.created_at) }}</td>
+            <td class="px-4 py-3 text-gray-400">{{ formatDateTime(u.last_login_at) }}</td>
             <td class="px-4 py-3">
               <button @click="toggleVip(u)" :class="u.vip_level >= 1 ? 'text-amber-400' : 'text-gray-600'" class="hover:underline">
                 {{ u.vip_level >= 1 ? 'VIP' : '普通' }}

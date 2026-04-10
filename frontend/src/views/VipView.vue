@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { apiVipPlans, apiCreateOrder, apiMyOrders, type VipPlan, type Order } from '@/api'
+import { computed, onMounted, ref } from 'vue'
+import { apiCreateOrder, apiMyOrders, apiVipPlans, type Order, type VipPlan } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -12,13 +12,32 @@ const paymentMethod = ref('wechat')
 const loading = ref(false)
 const showPayModal = ref(false)
 const paymentInfo = ref<Record<string, unknown> | null>(null)
-
 const pageError = ref('')
+
+const preferredPlanOrder = ['monthly', 'quarterly', 'yearly']
+
+const planEntries = computed(() => {
+  return Object.entries(plans.value)
+    .sort(([keyA], [keyB]) => {
+      const idxA = preferredPlanOrder.indexOf(keyA)
+      const idxB = preferredPlanOrder.indexOf(keyB)
+      const orderA = idxA === -1 ? 99 : idxA
+      const orderB = idxB === -1 ? 99 : idxB
+      return orderA - orderB
+    })
+})
+
+const selectedPlanInfo = computed(() => plans.value[selectedPlan.value])
 
 async function loadPlans() {
   try {
     const { data } = await apiVipPlans()
     plans.value = data
+
+    if (!plans.value[selectedPlan.value]) {
+      const firstKey = Object.keys(plans.value)[0]
+      if (firstKey) selectedPlan.value = firstKey
+    }
   } catch {
     pageError.value = '套餐加载失败，请刷新重试'
   }
@@ -29,13 +48,19 @@ async function loadOrders() {
     const { data } = await apiMyOrders()
     orders.value = data.data
   } catch {
-    // silent — orders are secondary
+    // 订单仅为辅助信息，忽略错误
   }
 }
 
 async function handlePurchase() {
+  if (!selectedPlanInfo.value) {
+    pageError.value = '请选择套餐后再开通'
+    return
+  }
+
   loading.value = true
   pageError.value = ''
+
   try {
     const { data } = await apiCreateOrder({
       plan: selectedPlan.value,
@@ -58,11 +83,11 @@ function statusText(status: number): string {
 
 function statusColor(status: number): string {
   const map: Record<number, string> = {
-    0: 'text-yellow-400',
-    1: 'text-green-400',
-    2: 'text-gray-500',
+    0: 'text-amber-300',
+    1: 'text-emerald-300',
+    2: 'text-slate-400',
   }
-  return map[status] ?? 'text-gray-400'
+  return map[status] ?? 'text-slate-300'
 }
 
 onMounted(() => {
@@ -72,136 +97,170 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-8">
-    <!-- VIP 状态 -->
-    <div class="rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30 p-6">
-      <div class="flex items-center justify-between">
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <RouterLink
+        to="/account"
+        class="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.06] px-4 py-2 text-sm text-slate-200 transition hover:border-amber-300/50 hover:bg-white/[0.1]"
+      >
+        <span aria-hidden="true">←</span>
+        返回个人中心
+      </RouterLink>
+      <div class="hidden text-xs text-slate-300/70 sm:block">会员服务中心</div>
+    </div>
+
+    <div class="rounded-3xl border border-amber-300/25 bg-gradient-to-r from-[#332113]/65 via-[#2a2536]/58 to-[#1d2f44]/62 p-6 sm:p-7">
+      <div class="flex items-center justify-between gap-4">
         <div>
-          <h2 class="text-xl font-bold">
-            <template v-if="auth.isVip">🌟 您是 VIP 会员</template>
-            <template v-else>升级为 VIP 会员</template>
-          </h2>
-          <p class="mt-1 text-sm text-gray-400">
+          <h1 class="text-2xl tracking-tight sm:text-3xl">
+            <template v-if="auth.isVip">VIP 会员已开通</template>
+            <template v-else>升级 VIP 会员</template>
+          </h1>
+          <p class="mt-2 text-sm text-slate-200/85">
             <template v-if="auth.isVip">
-              会员到期时间：{{ auth.user?.vip_expired_at?.slice(0, 10) }}
+              当前会员到期：{{ auth.user?.vip_expired_at?.slice(0, 10) }}
             </template>
             <template v-else>
-              解锁全部视频资源，享受无限观看
+              解锁全部高清视频、极速线路与专属内容。
             </template>
           </p>
         </div>
-        <div class="text-5xl">👑</div>
+        <div class="text-4xl sm:text-5xl">👑</div>
       </div>
     </div>
 
-    <div v-if="pageError" class="rounded-xl border border-red-500/30 bg-red-500/5 px-5 py-4 text-center text-sm text-red-400">{{ pageError }}</div>
+    <div v-if="pageError" class="rounded-2xl border border-red-400/30 bg-red-500/10 px-5 py-4 text-sm text-red-300">
+      {{ pageError }}
+    </div>
 
-    <!-- 套餐选择 -->
-    <div>
-      <h3 class="mb-4 text-lg font-bold">选择套餐</h3>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <section class="rounded-3xl border border-white/12 bg-white/[0.06] p-5 sm:p-6">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg">选择套餐</h2>
+        <span v-if="selectedPlanInfo" class="text-sm text-amber-300">已选：{{ selectedPlanInfo.name }}</span>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         <button
-          v-for="(plan, key) in plans"
+          v-for="[key, plan] in planEntries"
           :key="key"
-          @click="selectedPlan = key as string"
+          @click="selectedPlan = key"
           :class="[
-            'relative rounded-xl border-2 p-5 text-left transition',
+            'relative rounded-2xl border p-5 text-left transition duration-200',
             selectedPlan === key
-              ? 'border-amber-500 bg-amber-500/10'
-              : 'border-gray-700 bg-gray-900 hover:border-gray-600'
+              ? 'border-amber-400/80 bg-amber-400/12 shadow-[0_10px_30px_rgba(251,191,36,0.15)]'
+              : 'border-white/10 bg-[#1a2940]/45 hover:border-white/25 hover:bg-[#1a2940]/60'
           ]"
         >
-          <div class="text-sm font-medium text-gray-300">{{ plan.name }}</div>
-          <div class="mt-1 text-2xl font-bold text-white">
-            ¥{{ plan.price }}
-          </div>
-          <div class="mt-1 text-xs text-gray-500">{{ plan.months }} 个月</div>
+          <div class="text-sm text-slate-200/85">{{ plan.name }}</div>
+          <div class="mt-2 text-3xl leading-none text-white">¥{{ plan.price }}</div>
+          <div class="mt-2 text-xs text-slate-300/70">{{ plan.months }} 个月</div>
           <div
             v-if="selectedPlan === key"
-            class="absolute right-3 top-3 h-5 w-5 rounded-full bg-amber-500 text-center text-xs leading-5 text-black"
+            class="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-xs text-black"
           >
             ✓
           </div>
         </button>
       </div>
-    </div>
 
-    <!-- 支付方式 -->
-    <div>
-      <h3 class="mb-4 text-lg font-bold">支付方式</h3>
-      <div class="flex gap-4">
-        <button
-          @click="paymentMethod = 'wechat'"
-          :class="[
-            'flex items-center gap-2 rounded-xl border-2 px-6 py-3 transition',
-            paymentMethod === 'wechat' ? 'border-green-500 bg-green-500/10' : 'border-gray-700 bg-gray-900'
-          ]"
-        >
-          <span class="text-xl">💬</span>
-          <span class="text-sm">微信支付</span>
-        </button>
-        <button
-          @click="paymentMethod = 'alipay'"
-          :class="[
-            'flex items-center gap-2 rounded-xl border-2 px-6 py-3 transition',
-            paymentMethod === 'alipay' ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700 bg-gray-900'
-          ]"
-        >
-          <span class="text-xl">🔵</span>
-          <span class="text-sm">支付宝</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 购买按钮 -->
-    <button
-      @click="handlePurchase"
-      :disabled="loading"
-      class="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-center text-lg font-bold text-black transition hover:shadow-lg hover:shadow-amber-500/25 disabled:opacity-50 sm:w-auto sm:px-12"
-    >
-      {{ loading ? '处理中...' : '立即开通' }}
-    </button>
-
-    <!-- 支付弹窗（模拟） -->
-    <Teleport to="body">
-      <div v-if="showPayModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" @click.self="showPayModal = false">
-        <div class="rounded-2xl bg-gray-900 p-8 text-center shadow-2xl">
-          <h3 class="mb-4 text-xl font-bold">扫码支付</h3>
-          <div class="mx-auto mb-4 flex h-48 w-48 items-center justify-center rounded-xl bg-white">
-            <span class="text-6xl">📱</span>
-          </div>
-          <p class="text-sm text-gray-400">请使用 {{ paymentMethod === 'wechat' ? '微信' : '支付宝' }} 扫描二维码完成支付</p>
-          <p class="mt-2 text-lg font-bold text-amber-400">¥{{ plans[selectedPlan]?.price }}</p>
-          <button @click="showPayModal = false" class="mt-4 text-sm text-gray-500 hover:text-white">关闭</button>
+      <div class="mt-6">
+        <h3 class="mb-3 text-base">支付方式</h3>
+        <div class="flex flex-wrap gap-3">
+          <button
+            @click="paymentMethod = 'wechat'"
+            :class="[
+              'inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm transition',
+              paymentMethod === 'wechat'
+                ? 'border-emerald-400/80 bg-emerald-500/12 text-emerald-200'
+                : 'border-white/14 bg-white/[0.04] text-slate-200 hover:bg-white/[0.09]'
+            ]"
+          >
+            <span>💬</span>
+            微信支付
+          </button>
+          <button
+            @click="paymentMethod = 'alipay'"
+            :class="[
+              'inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm transition',
+              paymentMethod === 'alipay'
+                ? 'border-sky-400/80 bg-sky-500/12 text-sky-200'
+                : 'border-white/14 bg-white/[0.04] text-slate-200 hover:bg-white/[0.09]'
+            ]"
+          >
+            <span>🔵</span>
+            支付宝
+          </button>
         </div>
       </div>
-    </Teleport>
 
-    <!-- 订单记录 -->
-    <div v-if="orders.length">
-      <h3 class="mb-4 text-lg font-bold">订单记录</h3>
-      <div class="overflow-hidden rounded-xl border border-gray-800">
-        <table class="w-full text-sm">
+      <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-slate-300/80">
+          应付金额：
+          <span class="text-lg text-amber-300">¥{{ selectedPlanInfo?.price ?? '--' }}</span>
+        </p>
+        <button
+          @click="handlePurchase"
+          :disabled="loading || !selectedPlanInfo"
+          class="inline-flex min-w-[170px] items-center justify-center rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-7 py-3 text-base text-black transition hover:shadow-lg hover:shadow-amber-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {{ loading ? '处理中...' : '立即开通' }}
+        </button>
+      </div>
+    </section>
+
+    <section v-if="orders.length" class="rounded-3xl border border-white/12 bg-white/[0.05] p-5 sm:p-6">
+      <h3 class="mb-4 text-lg">订单记录</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[680px] text-sm">
           <thead>
-            <tr class="border-b border-gray-800 bg-gray-900/50 text-left text-gray-400">
-              <th class="px-4 py-3">订单号</th>
-              <th class="px-4 py-3">套餐</th>
-              <th class="px-4 py-3">金额</th>
-              <th class="px-4 py-3">状态</th>
-              <th class="px-4 py-3">时间</th>
+            <tr class="border-b border-white/10 text-left text-slate-300/80">
+              <th class="px-3 py-3">订单号</th>
+              <th class="px-3 py-3">套餐</th>
+              <th class="px-3 py-3">金额</th>
+              <th class="px-3 py-3">状态</th>
+              <th class="px-3 py-3">时间</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="order in orders" :key="order.id" class="border-b border-gray-800/50">
-              <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ order.order_no }}</td>
-              <td class="px-4 py-3">{{ order.plan_name }}</td>
-              <td class="px-4 py-3 text-amber-400">¥{{ order.amount }}</td>
-              <td class="px-4 py-3" :class="statusColor(order.status)">{{ statusText(order.status) }}</td>
-              <td class="px-4 py-3 text-gray-500">{{ order.created_at?.slice(0, 16) }}</td>
+            <tr v-for="order in orders" :key="order.id" class="border-b border-white/8 last:border-0">
+              <td class="px-3 py-3 font-mono text-xs text-slate-300/65">{{ order.order_no }}</td>
+              <td class="px-3 py-3 text-slate-100">{{ order.plan_name }}</td>
+              <td class="px-3 py-3 text-amber-300">¥{{ order.amount }}</td>
+              <td class="px-3 py-3" :class="statusColor(order.status)">{{ statusText(order.status) }}</td>
+              <td class="px-3 py-3 text-slate-300/60">{{ order.created_at?.slice(0, 16) }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
+
+    <Teleport to="body">
+      <div
+        v-if="showPayModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+        @click.self="showPayModal = false"
+      >
+        <div class="w-full max-w-md rounded-3xl border border-white/12 bg-[#152136]/96 p-6 text-center shadow-[0_20px_60px_rgba(2,6,23,0.45)]">
+          <h3 class="text-xl">扫码支付</h3>
+          <p class="mt-2 text-sm text-slate-300/80">请使用 {{ paymentMethod === 'wechat' ? '微信' : '支付宝' }} 扫码完成支付</p>
+
+          <div class="mx-auto my-5 flex h-52 w-52 items-center justify-center rounded-2xl bg-white text-6xl">
+            📱
+          </div>
+
+          <p class="text-sm text-slate-300/75">订单金额</p>
+          <p class="mt-1 text-2xl text-amber-300">¥{{ selectedPlanInfo?.price }}</p>
+
+          <div class="mt-5 flex justify-center gap-3">
+            <button
+              @click="showPayModal = false"
+              class="rounded-lg border border-white/14 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

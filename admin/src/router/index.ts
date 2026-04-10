@@ -18,6 +18,8 @@ const router = createRouter({
         { path: 'categories', name: 'categories', component: () => import('@/views/CategoriesManage.vue') },
         { path: 'users', name: 'users', component: () => import('@/views/UsersManage.vue') },
         { path: 'orders', name: 'orders', component: () => import('@/views/OrdersManage.vue') },
+        { path: 'site-settings', name: 'site-settings', component: () => import('@/views/SiteSettingsView.vue') },
+        { path: 'marquees', name: 'marquees', component: () => import('@/views/MarqueeManage.vue') },
         { path: 'media', name: 'media', component: () => import('@/views/MediaManage.vue') },
         { path: ':pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') },
       ],

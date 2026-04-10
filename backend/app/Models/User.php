@@ -23,6 +23,7 @@ class User extends Authenticatable
         'avatar',
         'vip_level',
         'vip_expired_at',
+        'last_login_at',
         'is_admin',
     ];
 
@@ -36,6 +37,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'vip_expired_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
         ];
