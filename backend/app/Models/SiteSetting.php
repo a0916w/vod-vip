@@ -30,6 +30,8 @@ class SiteSetting extends Model
         'search_hint_tail_color' => '#f59e0b',
         'search_hint_tail_font_size' => 14,
         'search_hint_tail_font_weight' => 'bold',
+        'hls_base_url' => '',
+        'telegram_webhook_url' => '',
     ];
 
     public static function publicSettings(): array

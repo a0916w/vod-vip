@@ -146,6 +146,14 @@ export interface SiteSettings {
   search_hint_tail_color: string
   search_hint_tail_font_size: number
   search_hint_tail_font_weight: 'normal' | 'bold'
+  hls_base_url: string
+  telegram_webhook_url: string
+  telegram_bot?: {
+    id: string
+    name: string
+    username: string
+    webhook_url: string
+  } | null
 }
 
 export interface Paginated<T> {

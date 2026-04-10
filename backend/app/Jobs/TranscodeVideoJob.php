@@ -92,8 +92,10 @@ class TranscodeVideoJob implements ShouldQueue
         $cmd = [
             'ffmpeg', '-y', '-i', $inputPath,
             '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+            '-force_key_frames', 'expr:gte(t,n_forced*1)',
+            '-sc_threshold', '0',
             '-c:a', 'aac', '-b:a', '128k',
-            '-hls_time', '10',
+            '-hls_time', '1',
             '-hls_list_size', '0',
             '-hls_key_info_file', $keyInfoFile,
             '-hls_segment_filename', $segmentPattern,

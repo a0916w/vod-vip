@@ -186,26 +186,19 @@ watch(
         leave-from-class="opacity-100 translate-y-0"
         leave-to-class="opacity-0 -translate-y-2"
       >
-        <div v-if="mobileMenuOpen" class="bg-white/[0.08] backdrop-blur-xl md:hidden">
+        <div v-if="mobileMenuOpen" class="absolute inset-x-0 top-full bg-[#1e2d42] shadow-2xl md:hidden">
           <div class="mx-auto max-w-7xl space-y-1 px-4 py-3">
-            <RouterLink to="/" class="block rounded-lg px-3 py-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">首页</RouterLink>
-            <RouterLink to="/browse" class="block rounded-lg px-3 py-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">分类浏览</RouterLink>
-            <RouterLink to="/search" class="block rounded-lg px-3 py-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">搜索</RouterLink>
+            <RouterLink to="/" class="block rounded-lg px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/8 hover:text-white">首页</RouterLink>
+            <RouterLink to="/browse" class="block rounded-lg px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/8 hover:text-white">分类浏览</RouterLink>
+            <RouterLink to="/search" class="block rounded-lg px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/8 hover:text-white">搜索</RouterLink>
             <template v-if="auth.isLoggedIn">
-              <RouterLink to="/account" class="block rounded-lg px-3 py-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">个人中心</RouterLink>
-              <RouterLink v-if="auth.isVip" to="/favorites" class="block rounded-lg px-3 py-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">我的收藏</RouterLink>
-              <RouterLink to="/vip" class="block rounded-lg px-3 py-2.5 text-sm text-amber-400 transition hover:bg-white/5">VIP 会员</RouterLink>
-              <div class="my-2 border-t border-gray-800/60"></div>
-              <div class="flex items-center gap-2 px-3 py-2">
-                <div class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs font-bold text-black">{{ auth.user?.nickname?.charAt(0) }}</div>
-                <span v-if="auth.isVip" class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400">VIP</span>
-              </div>
-              <button @click="auth.logout(); mobileMenuOpen = false" class="block w-full rounded-lg px-3 py-2.5 text-left text-sm text-red-300 transition hover:bg-white/5">退出登录</button>
+              <RouterLink to="/account" class="block rounded-lg px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/8 hover:text-white">个人中心</RouterLink>
+              <RouterLink v-if="auth.isVip" to="/favorites" class="block rounded-lg px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/8 hover:text-white">我的收藏</RouterLink>
+              <button @click="auth.logout(); mobileMenuOpen = false" class="block w-full rounded-lg px-3 py-2.5 text-left text-sm text-red-300 transition hover:bg-white/8">退出登录</button>
             </template>
             <template v-else>
-              <div class="my-2 border-t border-gray-800/60"></div>
-              <RouterLink to="/login" class="block rounded-lg px-3 py-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">登录</RouterLink>
-              <RouterLink to="/register" class="block rounded-lg px-3 py-2.5 text-sm text-amber-400 transition hover:bg-white/5">注册</RouterLink>
+              <RouterLink to="/login" class="block rounded-lg px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/8 hover:text-white">登录</RouterLink>
+              <RouterLink to="/register" class="block rounded-lg px-3 py-2.5 text-sm text-amber-400 transition hover:bg-white/8">注册</RouterLink>
             </template>
           </div>
         </div>

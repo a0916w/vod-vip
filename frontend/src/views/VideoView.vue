@@ -260,72 +260,65 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div v-else-if="video" class="space-y-6">
+    <div v-else-if="video">
       <!-- 转码中提示 -->
       <div
         v-if="video.transcode_status && video.transcode_status !== 'done'"
-        class="rounded-xl border border-amber-500/30 bg-amber-500/5 px-5 py-4 text-center"
+        class="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-center"
       >
         <template v-if="video.transcode_status === 'pending' || video.transcode_status === 'processing'">
-          <div class="mb-2 flex items-center justify-center gap-2">
-            <div class="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
-            <span class="font-medium text-amber-400">视频转码中，请稍后刷新...</span>
+          <div class="mb-1 flex items-center justify-center gap-2">
+            <div class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
+            <span class="text-sm text-amber-400">视频转码中，请稍后刷新...</span>
           </div>
-          <p class="text-xs text-gray-500">转码完成后即可播放加密 HLS 流</p>
+          <p class="text-[11px] text-gray-500">转码完成后即可播放加密 HLS 流</p>
         </template>
         <template v-else-if="video.transcode_status === 'failed'">
-          <span class="font-medium text-red-400">视频转码失败</span>
+          <span class="text-sm text-red-400">视频转码失败</span>
         </template>
       </div>
 
-      <!-- 播放器区域 -->
+      <!-- 播放器区域 — 全宽 -->
       <div
-        class="relative z-0 aspect-video w-full overflow-hidden rounded-xl bg-black"
-        :class="{ 'vip-locked': showVipOverlay || !video.play_url }"
+        class="relative z-0 -mx-4 aspect-video w-[calc(100%+2rem)] overflow-hidden bg-black sm:-mx-5 sm:w-[calc(100%+2.5rem)] md:mx-0 md:w-full md:rounded-xl"
       >
         <div ref="playerRef" class="h-full w-full"></div>
-        <VipOverlay v-if="showVipOverlay || !video.play_url" :trial-seconds="video?.vip_trial_seconds" />
       </div>
+      <VipOverlay v-if="showVipOverlay || !video.play_url" :trial-seconds="video?.vip_trial_seconds" @close="showVipOverlay = false" />
 
       <!-- 视频信息 -->
-      <div class="space-y-4">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-2xl font-bold">{{ video.title }}</h1>
+      <div class="mt-3 space-y-2">
+        <div class="flex items-start gap-2">
+          <div class="min-w-0 flex-1">
+            <h1 class="text-base font-medium leading-snug sm:text-lg">
+              {{ video.title }}
               <span
                 v-if="video.is_vip"
-                class="rounded bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-xs font-bold text-black"
-              >
-                VIP
-              </span>
-            </div>
-            <div class="mt-2 flex items-center gap-4 text-sm text-gray-400">
+                class="ml-1 inline-block translate-y-[-1px] rounded bg-gradient-to-r from-amber-400 to-orange-500 px-1.5 py-0.5 align-middle text-[10px] font-bold text-black"
+              >VIP</span>
+            </h1>
+            <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
               <span v-if="video.category">{{ video.category.name }}</span>
               <span>{{ formatViews(video.view_count) }} 次播放</span>
               <span>{{ formatDuration(video.duration) }}</span>
             </div>
           </div>
-
-          <div class="flex shrink-0 items-center gap-3">
-            <button
-              @click="toggleFavorite"
-              :disabled="favLoading"
-              :class="[
-                'flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm transition',
-                isFavorited
-                  ? 'border-red-500/50 bg-red-500/10 text-red-400'
-                  : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-500 hover:text-white'
-              ]"
-            >
-              <span class="text-base">{{ isFavorited ? '❤️' : '🤍' }}</span>
-              {{ isFavorited ? '已收藏' : '收藏' }}
-            </button>
-
-          </div>
+          <button
+            @click="toggleFavorite"
+            :disabled="favLoading"
+            :class="[
+              'flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition',
+              isFavorited
+                ? 'border-red-500/40 bg-red-500/10 text-red-400'
+                : 'border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white'
+            ]"
+          >
+            <span class="text-sm">{{ isFavorited ? '❤️' : '🤍' }}</span>
+            {{ isFavorited ? '已收藏' : '收藏' }}
+          </button>
         </div>
 
-        <p v-if="video.description" class="text-sm leading-relaxed text-gray-400">{{ video.description }}</p>
+        <p v-if="video.description" class="text-xs leading-relaxed text-gray-500">{{ video.description }}</p>
       </div>
 
       <!-- 推荐视频 -->

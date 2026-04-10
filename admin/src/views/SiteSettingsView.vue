@@ -4,6 +4,7 @@ import { apiSiteSettings, apiUpdateSiteSettings, type SiteSettings } from '@/api
 
 const loading = ref(false)
 const saving = ref(false)
+const telegramBot = ref<SiteSettings['telegram_bot']>(null)
 const form = ref<SiteSettings>({
   brand_badge: '',
   site_name: '',
@@ -20,13 +21,20 @@ const form = ref<SiteSettings>({
   search_hint_tail_color: '#f59e0b',
   search_hint_tail_font_size: 14,
   search_hint_tail_font_weight: 'bold',
+  hls_base_url: '',
+  telegram_webhook_url: '',
 })
 
 async function load() {
   loading.value = true
   try {
     const { data } = await apiSiteSettings()
-    form.value = data
+    telegramBot.value = data.telegram_bot ?? null
+    form.value = {
+      ...form.value,
+      ...data,
+      telegram_bot: undefined,
+    }
   } catch (err: any) {
     alert(err.response?.data?.message || '站点设置加载失败')
   } finally {
@@ -38,7 +46,12 @@ async function save() {
   saving.value = true
   try {
     const { data } = await apiUpdateSiteSettings(form.value)
-    form.value = data
+    telegramBot.value = data.telegram_bot ?? null
+    form.value = {
+      ...form.value,
+      ...data,
+      telegram_bot: undefined,
+    }
     alert('站点设置已保存')
   } catch (err: any) {
     alert(err.response?.data?.message || '保存失败')
@@ -132,6 +145,53 @@ onMounted(load)
               placeholder="例如：https://example.com/favicon.ico"
               class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
             />
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm text-gray-400">HLS 播放域名</label>
+            <input
+              v-model="form.hls_base_url"
+              maxlength="500"
+              placeholder="例如：https://play.example.com/hls/"
+              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+            />
+            <p class="mt-1 text-xs text-gray-500">HLS 视频流的 CDN/播放域名前缀。留空则使用本站 /storage/ 路径。示例填入后，hls/30/index.m3u8 会拼接为 https://play.example.com/hls/hls/30/index.m3u8</p>
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm text-gray-400">Telegram Webhook 地址</label>
+            <input
+              v-model="form.telegram_webhook_url"
+              maxlength="500"
+              placeholder="例如：https://api.example.com/api/telegram/webhook"
+              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+            />
+            <p class="mt-1 text-xs text-gray-500">用于记录当前 Telegram Bot 应使用的 webhook 回调地址，方便在后台统一查看和维护。</p>
+          </div>
+
+          <div class="rounded-xl border border-gray-800 bg-gray-800/50 p-4">
+            <div class="mb-3 text-sm text-amber-300">Telegram Bot 信息</div>
+            <div v-if="telegramBot" class="space-y-2 text-sm text-gray-300">
+              <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                <span class="text-gray-400">Bot ID</span>
+                <span class="font-medium text-white">{{ telegramBot.id }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                <span class="text-gray-400">Bot 名称</span>
+                <span class="font-medium text-white">{{ telegramBot.name || '未获取到' }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                <span class="text-gray-400">Bot 用户名</span>
+                <span class="font-medium text-white">{{ telegramBot.username ? `@${telegramBot.username}` : '未获取到' }}</span>
+              </div>
+              <div class="rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                <div class="mb-1 text-gray-400">Webhook 配置</div>
+                <div class="break-all text-xs text-white">{{ telegramBot.webhook_url || '未配置' }}</div>
+              </div>
+            </div>
+            <div v-else class="rounded-lg border border-dashed border-gray-700 px-3 py-4 text-sm text-gray-500">
+              当前未配置 Telegram Bot Token
+            </div>
           </div>
 
           <div>

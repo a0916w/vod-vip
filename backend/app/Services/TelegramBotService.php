@@ -59,13 +59,18 @@ class TelegramBotService
         if (isset($message['video'])) {
             $this->processMedia($message['video'], 'video', $caption, $fromId, $fromUsername, $message['chat']['id']);
         } elseif (isset($message['photo'])) {
-            $photo = end($message['photo']);
-            $this->processMedia($photo, 'image', $caption, $fromId, $fromUsername, $message['chat']['id']);
+            $this->sendMessage($message['chat']['id'], '🖼 图片已忽略，仅支持视频下载和转码。');
         } elseif (isset($message['document'])) {
             $doc = $message['document'];
             $mimeType = $doc['mime_type'] ?? '';
             $fileType = str_starts_with($mimeType, 'video/') ? 'video'
                 : (str_starts_with($mimeType, 'image/') ? 'image' : 'document');
+
+            if ($fileType !== 'video') {
+                $this->sendMessage($message['chat']['id'], '📄 该文件已忽略，仅支持视频下载和转码。');
+                return;
+            }
+
             $this->processMedia($doc, $fileType, $caption, $fromId, $fromUsername, $message['chat']['id']);
         } elseif (isset($message['text'])) {
             $this->handleTextCommand($message);
@@ -213,9 +218,10 @@ class TelegramBotService
     {
         try {
             $defaultCategory = Category::where('slug', 'tg')->first();
+            $title = $this->buildVideoTitle($resource);
 
             $video = Video::create([
-                'title' => $resource->caption ?: $resource->file_name,
+                'title' => $title,
                 'cover_url' => "https://picsum.photos/seed/m{$resource->id}/400/225",
                 'video_url' => $resource->local_path,
                 'is_vip' => false,
@@ -282,8 +288,9 @@ class TelegramBotService
             str_starts_with($text, '/start') => $this->sendMessage($chatId,
                 "👋 欢迎使用 VOD-VIP 资源采集 Bot！\n\n"
                 . "直接向我发送或转发：\n"
-                . "🎬 视频\n🖼 图片\n📄 文件\n\n"
-                . "我会自动下载并入库。\n\n"
+                . "🎬 视频\n📄 视频文件\n\n"
+                . "我会自动下载、入库并转码。\n"
+                . "图片和非视频文件会被忽略。\n\n"
                 . "当前模式：{$modeLabel}\n\n"
                 . "可用命令：\n"
                 . "/stats - 查看入库统计\n"
@@ -298,8 +305,19 @@ class TelegramBotService
                 . "API：{$this->apiBase}\n"
                 . "文件上限：{$this->formatFileSize($this->maxFileSize)}"
             ),
-            default => $this->sendMessage($chatId, '请直接发送视频、图片或文件给我。'),
+            default => $this->sendMessage($chatId, '请直接发送视频或视频文件给我。'),
         };
+    }
+
+    private function buildVideoTitle(MediaResource $resource): string
+    {
+        $text = trim((string) $resource->caption);
+        if ($text !== '') {
+            $text = preg_replace('/\s+/u', ' ', $text) ?: $text;
+            return Str::limit($text, 255, '');
+        }
+
+        return (string) ($resource->file_name ?: "video-{$resource->id}");
     }
 
     private function handleStats(int $chatId): void

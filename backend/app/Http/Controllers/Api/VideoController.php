@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class VideoController extends Controller
 {
-    private function mediaUrl(?string $relativePath): ?string
+    private function mediaUrl(?string $relativePath, ?string $baseOverride = null): ?string
     {
         if (! $relativePath) {
             return null;
@@ -21,7 +21,9 @@ class VideoController extends Controller
             return $relativePath;
         }
 
-        return rtrim(config('app.media_base_url'), '/') . '/' . ltrim($relativePath, '/');
+        $base = $baseOverride ?: config('app.media_base_url');
+
+        return rtrim($base, '/') . '/' . ltrim($relativePath, '/');
     }
 
     private function videoListItem(Video $video): array
@@ -84,14 +86,17 @@ class VideoController extends Controller
         $isHls = $video->hls_path && $video->transcode_status === 'done';
         $playType = $isHls ? 'hls' : 'mp4';
 
+        $hlsBase = trim($settings['hls_base_url'] ?? '');
+        $hlsBaseUrl = $hlsBase !== '' ? $hlsBase : null;
+
         if ($canPlayFull) {
             $playUrl = $isHls
-                ? $this->mediaUrl($video->hls_path)
+                ? $this->mediaUrl($video->hls_path, $hlsBaseUrl)
                 : $this->mediaUrl($video->video_url);
         } else {
             $playUrl = $this->mediaUrl($video->preview_url) ?: (
                 $isHls
-                    ? $this->mediaUrl($video->hls_path)
+                    ? $this->mediaUrl($video->hls_path, $hlsBaseUrl)
                     : $this->mediaUrl($video->video_url)
             );
         }
