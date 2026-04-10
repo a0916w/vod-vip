@@ -386,10 +386,17 @@ class TelegramBotService
 
     public function setWebhook(string $url): array
     {
-        $response = Http::post("{$this->apiBase}/setWebhook", [
+        $payload = [
             'url' => $url,
             'allowed_updates' => ['message'],
-        ]);
+        ];
+
+        $secret = trim((string) config('telegram.webhook_secret', ''));
+        if ($secret !== '') {
+            $payload['secret_token'] = $secret;
+        }
+
+        $response = Http::post("{$this->apiBase}/setWebhook", $payload);
 
         return $response->json();
     }
@@ -402,6 +409,11 @@ class TelegramBotService
     public function getMe(): array
     {
         return Http::get("{$this->apiBase}/getMe")->json();
+    }
+
+    public function getWebhookInfo(): array
+    {
+        return Http::get("{$this->apiBase}/getWebhookInfo")->json();
     }
 
     private function guessExtension(string $fileType): string

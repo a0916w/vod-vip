@@ -152,7 +152,10 @@ export interface SiteSettings {
     id: string
     name: string
     username: string
-    webhook_url: string
+    configured_webhook_url: string
+    current_webhook_url: string
+    pending_update_count: number
+    last_error_message: string
   } | null
 }
 

@@ -74,242 +74,284 @@ onMounted(load)
       <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-amber-500"></div>
     </div>
 
-    <div v-else class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div class="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-        <form @submit.prevent="save" class="space-y-4">
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">徽标文字</label>
-            <input
-              v-model="form.brand_badge"
-              maxlength="20"
-              placeholder="例如：VOD"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">站点名称</label>
-            <input
-              v-model="form.site_name"
-              maxlength="50"
-              placeholder="例如：VIP 影院"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">底部版权文案</label>
-            <input
-              v-model="form.footer_text"
-              maxlength="120"
-              placeholder="例如：VOD-VIP. All rights reserved."
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">浏览器标签页标题</label>
-            <input
-              v-model="form.browser_title"
-              maxlength="80"
-              placeholder="例如：VOD-VIP 影院"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">首页 SEO 标题</label>
-            <input
-              v-model="form.home_seo_title"
-              maxlength="120"
-              placeholder="例如：VOD-VIP 影院 - 精选高清视频点播平台"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">Logo 图片地址</label>
-            <input
-              v-model="form.logo_image_url"
-              maxlength="500"
-              placeholder="例如：https://example.com/logo.png"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">favicon 网站图标</label>
-            <input
-              v-model="form.favicon_url"
-              maxlength="500"
-              placeholder="例如：https://example.com/favicon.ico"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">HLS 播放域名</label>
-            <input
-              v-model="form.hls_base_url"
-              maxlength="500"
-              placeholder="例如：https://play.example.com/hls/"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-            <p class="mt-1 text-xs text-gray-500">HLS 视频流的 CDN/播放域名前缀。留空则使用本站 /storage/ 路径。示例填入后，hls/30/index.m3u8 会拼接为 https://play.example.com/hls/hls/30/index.m3u8</p>
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">Telegram Webhook 地址</label>
-            <input
-              v-model="form.telegram_webhook_url"
-              maxlength="500"
-              placeholder="例如：https://api.example.com/api/telegram/webhook"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-            <p class="mt-1 text-xs text-gray-500">用于记录当前 Telegram Bot 应使用的 webhook 回调地址，方便在后台统一查看和维护。</p>
-          </div>
-
-          <div class="rounded-xl border border-gray-800 bg-gray-800/50 p-4">
-            <div class="mb-3 text-sm text-amber-300">Telegram Bot 信息</div>
-            <div v-if="telegramBot" class="space-y-2 text-sm text-gray-300">
-              <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
-                <span class="text-gray-400">Bot ID</span>
-                <span class="font-medium text-white">{{ telegramBot.id }}</span>
-              </div>
-              <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
-                <span class="text-gray-400">Bot 名称</span>
-                <span class="font-medium text-white">{{ telegramBot.name || '未获取到' }}</span>
-              </div>
-              <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
-                <span class="text-gray-400">Bot 用户名</span>
-                <span class="font-medium text-white">{{ telegramBot.username ? `@${telegramBot.username}` : '未获取到' }}</span>
-              </div>
-              <div class="rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
-                <div class="mb-1 text-gray-400">Webhook 配置</div>
-                <div class="break-all text-xs text-white">{{ telegramBot.webhook_url || '未配置' }}</div>
-              </div>
+    <div v-else class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <form @submit.prevent="save" class="space-y-6">
+        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+          <div class="mb-4 flex items-start justify-between gap-4 border-b border-gray-800 pb-4">
+            <div>
+              <h2 class="text-lg font-bold text-white">基础信息</h2>
+              <p class="mt-1 text-sm text-gray-500">品牌、标题、Logo 和页脚等站点展示内容。</p>
             </div>
-            <div v-else class="rounded-lg border border-dashed border-gray-700 px-3 py-4 text-sm text-gray-500">
-              当前未配置 Telegram Bot Token
-            </div>
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">VIP 试看秒数</label>
-            <input
-              v-model.number="form.vip_trial_seconds"
-              type="number"
-              min="1"
-              max="600"
-              placeholder="例如：30"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-            <p class="mt-1 text-xs text-gray-500">非 VIP 用户观看 VIP 视频时的免费试看时长（秒）。</p>
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">搜索提示文案（首页搜索框上方）</label>
-            <input
-              v-model="form.search_hint_text"
-              maxlength="120"
-              placeholder="例如：每日更新精选内容，点击搜索立即观看"
-              class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label class="mb-2 block text-sm text-gray-400">搜索提示文案颜色</label>
-            <div class="flex items-center gap-3">
-              <input
-                v-model="form.search_hint_color"
-                type="color"
-                class="h-10 w-14 cursor-pointer rounded border border-gray-700 bg-gray-800 p-1"
-              />
-              <input
-                v-model="form.search_hint_color"
-                maxlength="7"
-                placeholder="#f8fafc"
-                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-              />
-            </div>
+            <button
+              type="submit"
+              :disabled="saving"
+              class="shrink-0 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
+            >
+              {{ saving ? '保存中...' : '保存设置' }}
+            </button>
           </div>
 
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label class="mb-2 block text-sm text-gray-400">搜索提示字号（px）</label>
+              <label class="mb-2 block text-sm text-gray-400">徽标文字</label>
               <input
-                v-model.number="form.search_hint_font_size"
-                type="number"
-                min="10"
-                max="48"
+                v-model="form.brand_badge"
+                maxlength="20"
+                placeholder="例如：VOD"
                 class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
               />
             </div>
+
             <div>
-              <label class="mb-2 block text-sm text-gray-400">搜索提示字重</label>
-              <select
-                v-model="form.search_hint_font_weight"
+              <label class="mb-2 block text-sm text-gray-400">站点名称</label>
+              <input
+                v-model="form.site_name"
+                maxlength="50"
+                placeholder="例如：VIP 影院"
                 class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-              >
-                <option value="normal">常规</option>
-                <option value="bold">粗体</option>
-              </select>
+              />
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm text-gray-400">底部版权文案</label>
+              <input
+                v-model="form.footer_text"
+                maxlength="120"
+                placeholder="例如：VOD-VIP. All rights reserved."
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">浏览器标签页标题</label>
+              <input
+                v-model="form.browser_title"
+                maxlength="80"
+                placeholder="例如：VOD-VIP 影院"
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">首页 SEO 标题</label>
+              <input
+                v-model="form.home_seo_title"
+                maxlength="120"
+                placeholder="例如：VOD-VIP 影院 - 精选高清视频点播平台"
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">Logo 图片地址</label>
+              <input
+                v-model="form.logo_image_url"
+                maxlength="500"
+                placeholder="例如：https://example.com/logo.png"
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">favicon 网站图标</label>
+              <input
+                v-model="form.favicon_url"
+                maxlength="500"
+                placeholder="例如：https://example.com/favicon.ico"
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
             </div>
           </div>
+        </div>
 
-          <div class="rounded-xl border border-gray-800 bg-gray-800/50 p-4">
-            <div class="mb-3 text-sm text-amber-300">最后四个字（单独控制）</div>
-            <div class="grid gap-4 md:grid-cols-2">
-              <div>
-                <label class="mb-2 block text-sm text-gray-400">最后四字颜色</label>
-                <div class="flex items-center gap-3">
-                  <input
-                    v-model="form.search_hint_tail_color"
-                    type="color"
-                    class="h-10 w-14 cursor-pointer rounded border border-gray-700 bg-gray-800 p-1"
-                  />
-                  <input
-                    v-model="form.search_hint_tail_color"
-                    maxlength="7"
-                    placeholder="#f59e0b"
-                    class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-                  />
+        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+          <div class="mb-4 border-b border-gray-800 pb-4">
+            <h2 class="text-lg font-bold text-white">播放与 Telegram</h2>
+            <p class="mt-1 text-sm text-gray-500">统一维护播放域名、Webhook 和 Bot 当前状态。</p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">HLS 播放域名</label>
+              <input
+                v-model="form.hls_base_url"
+                maxlength="500"
+                placeholder="例如：https://play.example.com/hls/"
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
+              <p class="mt-1 text-xs text-gray-500">HLS 视频流的 CDN/播放域名前缀。留空则使用本站 `/storage/` 路径。</p>
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">Telegram Webhook 地址</label>
+              <input
+                v-model="form.telegram_webhook_url"
+                maxlength="500"
+                placeholder="例如：https://api.example.com/api/telegram/webhook"
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
+              <p class="mt-1 text-xs text-gray-500">保存后会自动同步到 Telegram。留空时会尝试删除当前 webhook。</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-800 bg-gray-800/50 p-4">
+              <div class="mb-3 text-sm text-amber-300">Telegram Bot 信息</div>
+              <div v-if="telegramBot" class="space-y-2 text-sm text-gray-300">
+                <div class="grid gap-2 md:grid-cols-2">
+                  <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                    <span class="text-gray-400">Bot ID</span>
+                    <span class="font-medium text-white">{{ telegramBot.id }}</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                    <span class="text-gray-400">待处理更新数</span>
+                    <span class="font-medium text-white">{{ telegramBot.pending_update_count }}</span>
+                  </div>
+                </div>
+                <div class="grid gap-2 md:grid-cols-2">
+                  <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                    <span class="text-gray-400">Bot 名称</span>
+                    <span class="font-medium text-white">{{ telegramBot.name || '未获取到' }}</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                    <span class="text-gray-400">Bot 用户名</span>
+                    <span class="font-medium text-white">{{ telegramBot.username ? `@${telegramBot.username}` : '未获取到' }}</span>
+                  </div>
+                </div>
+                <div class="rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                  <div class="mb-1 text-gray-400">后台配置地址</div>
+                  <div class="break-all text-xs text-white">{{ telegramBot.configured_webhook_url || '未配置' }}</div>
+                </div>
+                <div class="rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+                  <div class="mb-1 text-gray-400">Telegram 当前生效地址</div>
+                  <div class="break-all text-xs text-white">{{ telegramBot.current_webhook_url || '未配置' }}</div>
+                </div>
+                <div v-if="telegramBot.last_error_message" class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2">
+                  <div class="mb-1 text-red-300">最近错误</div>
+                  <div class="break-all text-xs text-red-200">{{ telegramBot.last_error_message }}</div>
                 </div>
               </div>
-              <div>
-                <label class="mb-2 block text-sm text-gray-400">最后四字字号（px）</label>
+              <div v-else class="rounded-lg border border-dashed border-gray-700 px-3 py-4 text-sm text-gray-500">
+                当前未配置 Telegram Bot Token
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+          <div class="mb-4 border-b border-gray-800 pb-4">
+            <h2 class="text-lg font-bold text-white">VIP 与搜索文案</h2>
+            <p class="mt-1 text-sm text-gray-500">试看时长和首页搜索提示样式统一放在这里调整。</p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">VIP 试看秒数</label>
+              <input
+                v-model.number="form.vip_trial_seconds"
+                type="number"
+                min="1"
+                max="600"
+                placeholder="例如：30"
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
+              <p class="mt-1 text-xs text-gray-500">非 VIP 用户观看 VIP 视频时的免费试看时长（秒）。</p>
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">搜索提示文案（首页搜索框上方）</label>
+              <input
+                v-model="form.search_hint_text"
+                maxlength="120"
+                placeholder="例如：每日更新精选内容，点击搜索立即观看"
+                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm text-gray-400">搜索提示文案颜色</label>
+              <div class="flex items-center gap-3">
                 <input
-                  v-model.number="form.search_hint_tail_font_size"
+                  v-model="form.search_hint_color"
+                  type="color"
+                  class="h-10 w-14 cursor-pointer rounded border border-gray-700 bg-gray-800 p-1"
+                />
+                <input
+                  v-model="form.search_hint_color"
+                  maxlength="7"
+                  placeholder="#f8fafc"
+                  class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-sm text-gray-400">搜索提示字号（px）</label>
+                <input
+                  v-model.number="form.search_hint_font_size"
                   type="number"
                   min="10"
                   max="48"
                   class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
                 />
               </div>
+              <div>
+                <label class="mb-2 block text-sm text-gray-400">搜索提示字重</label>
+                <select
+                  v-model="form.search_hint_font_weight"
+                  class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+                >
+                  <option value="normal">常规</option>
+                  <option value="bold">粗体</option>
+                </select>
+              </div>
             </div>
-            <div class="mt-4">
-              <label class="mb-2 block text-sm text-gray-400">最后四字字重</label>
-              <select
-                v-model="form.search_hint_tail_font_weight"
-                class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
-              >
-                <option value="normal">常规</option>
-                <option value="bold">粗体</option>
-              </select>
+
+            <div class="rounded-xl border border-gray-800 bg-gray-800/50 p-4">
+              <div class="mb-3 text-sm text-amber-300">最后四个字（单独控制）</div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="mb-2 block text-sm text-gray-400">最后四字颜色</label>
+                  <div class="flex items-center gap-3">
+                    <input
+                      v-model="form.search_hint_tail_color"
+                      type="color"
+                      class="h-10 w-14 cursor-pointer rounded border border-gray-700 bg-gray-800 p-1"
+                    />
+                    <input
+                      v-model="form.search_hint_tail_color"
+                      maxlength="7"
+                      placeholder="#f59e0b"
+                      class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm text-gray-400">最后四字字号（px）</label>
+                  <input
+                    v-model.number="form.search_hint_tail_font_size"
+                    type="number"
+                    min="10"
+                    max="48"
+                    class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+              <div class="mt-4">
+                <label class="mb-2 block text-sm text-gray-400">最后四字字重</label>
+                <select
+                  v-model="form.search_hint_tail_font_weight"
+                  class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
+                >
+                  <option value="normal">常规</option>
+                  <option value="bold">粗体</option>
+                </select>
+              </div>
             </div>
           </div>
+        </div>
+      </form>
 
-          <button
-            type="submit"
-            :disabled="saving"
-            class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
-          >
-            {{ saving ? '保存中...' : '保存设置' }}
-          </button>
-        </form>
-      </div>
-
-      <div class="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+      <div class="h-fit rounded-2xl border border-gray-800 bg-gray-900 p-5 xl:sticky xl:top-6">
         <h2 class="text-lg font-bold">预览</h2>
         <div class="mt-4 rounded-2xl border border-white/10 bg-slate-900/80 p-4">
           <div class="flex items-center gap-2 text-lg font-bold text-white">
